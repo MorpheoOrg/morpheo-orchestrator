@@ -27,6 +27,7 @@ class Model(db.document):
 class Data(db.document):
     uuid = db.UUIDField()
     problems = db.ListField(db.UUIDField())
+    timestamp_upload = db.DateTimeField()
     poster = db.UUIDField()
 
 
