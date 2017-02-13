@@ -22,7 +22,12 @@ pip install -r requirements.txt
 
 ## Usage
 
-Start MongoDB: `sudo service mongod start` on Linux and `mongod` on OSX.
+Start MongoDB:  
+on Linux  
+`sudo service mongod start`  
+on OSX  
+`mongod`
+
 Launch the app: `python api.py`
 
 Interact with the api:
