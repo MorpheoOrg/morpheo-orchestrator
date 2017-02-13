@@ -22,8 +22,8 @@ post_document = {
 def get_all_documents(collection_name):
     collection = mongo.db[collection_name]
     output = [{k: v for k, v in d.items() if k != '_id'}
-               for d in collection.find()]
-    return jsonify({'%ss' % collection_name : output}), 200
+              for d in collection.find()]
+    return jsonify({'%ss' % collection_name: output}), 200
 
 
 @app.route('/<collection_name>', methods=['POST'])
@@ -40,9 +40,9 @@ def add_document(collection_name):
         # TODO: validation on fields
         problem_id = collection.insert(new_document)
         # return created document
-        new_problem = collection.find_one({'_id' : problem_id})
+        new_problem = collection.find_one({'_id': problem_id})
         output = {k: new_problem[k] for k in post_document[collection_name]}
-        return jsonify({'new_%s' % collection_name : output}), 201
+        return jsonify({'new_%s' % collection_name: output}), 201
     else:
         return jsonify({'Error': 'Page does not exist'}), 400
 
