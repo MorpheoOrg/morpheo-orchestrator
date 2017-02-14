@@ -1,30 +1,32 @@
+import os
+os.environ['TESTING'] = "T"
 import unittest
-from flask_pymongo import PyMongo
 from pymongo import MongoClient
-import api
-
+from api import app
+import json
 
 class APITestCase(unittest.TestCase):
 
     def setUp(self):
-        
-        api.app.config['MONGO_DBNAME'] = 'test_db'
-        api.app.config['TESTING'] = True
-        # self.mongo = PyMongo(api.app)
-        self.app = api.app.test_client()
+        self.app = app.test_client()
 
     def test_get_all_documents(self):
         rv = self.app.get('/problem')
-        print(api.mongo.db)
         self.assertEqual(rv.status_code, 200)
 
     def test_get_all_documenys(self):
         rv = self.app.get('/caca')
         self.assertEqual(rv.status_code, 200)
 
+    def test_create_problem(self):
+        rv = self.app.post('/problem',
+                           data=json.dumps({"uuid": "TT", "workflow": "TT"}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 201)
+
     def tearDown(self):
         client = MongoClient()
-        client.drop_database('test_db')
+        client.drop_database(app.config["MONGO_DBNAME"])
 
 if __name__ == '__main__':
     unittest.main()

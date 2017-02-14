@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
 import time
@@ -5,7 +6,12 @@ import time
 
 app = Flask(__name__)
 
-app.config['MONGO_DBNAME'] = 'orchestrator'
+testing = os.environ.get('TESTING', "F")
+if testing == "T":
+    app.config['MONGO_DBNAME'] = 'test_orchestrator'
+    app.config['TESTING'] = True
+else:
+    app.config['MONGO_DBNAME'] = 'orchestrator'
 mongo = PyMongo(app)
 
 
@@ -31,8 +37,8 @@ def add_document(collection_name):
     if collection_name in post_document.keys():
         collection = mongo.db[collection_name]
         try:
-            print(request.json)
-            new_document = {k: request.json[k]
+            request_data = request.get_json()
+            new_document = {k: request_data[k]
                             for k in post_document[collection_name]}
         except KeyError:
             return jsonify({'Error': 'wrong key in posted data'}), 400
