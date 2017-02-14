@@ -31,10 +31,13 @@ post_document = {
 
 @app.route('/<collection_name>', methods=['GET'])
 def get_all_documents(collection_name):
-    collection = mongo.db[collection_name]
-    output = [{k: v for k, v in d.items() if k != '_id'}
-              for d in collection.find()]
-    return jsonify({'%ss' % collection_name: output}), 200
+    if collection_name in post_document.keys():
+        collection = mongo.db[collection_name]
+        output = [{k: v for k, v in d.items() if k != '_id'}
+                  for d in collection.find()]
+        return jsonify({'%ss' % collection_name: output}), 200
+    else:
+        return jsonify({'Error': 'Page does not exist'}), 404
 
 
 @app.route('/<collection_name>', methods=['POST'])
@@ -55,7 +58,7 @@ def add_document(collection_name):
         output = {k: new_problem[k] for k in post_document[collection_name]}
         return jsonify({'new_%s' % collection_name: output}), 201
     else:
-        return jsonify({'Error': 'Page does not exist'}), 400
+        return jsonify({'Error': 'Page does not exist'}), 404
 
 if __name__ == '__main__':
     app.run(debug=True)
