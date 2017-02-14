@@ -2,6 +2,7 @@ import os
 from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
 import time
+import tasks
 
 
 app = Flask(__name__)
@@ -47,8 +48,10 @@ def get_all_documents(collection_name):
 def add_document(collection_name):
     """
     Add document to the collection whose name is collection_name.
+    TODO upload several data at the same time????
     """
     if collection_name in post_document.keys():
+        task = ""
         collection = mongo.db[collection_name]
         try:
             request_data = request.get_json()
@@ -57,12 +60,20 @@ def add_document(collection_name):
         except KeyError:
             return jsonify({'Error': 'wrong key in posted data'}), 400
         new_document['timestamp_upload'] = int(time.time())
-        # TODO: validation on fields
+        # TODO: validation on fields + check element does not exist
         inserted = collection.insert_one(new_document)
+        # create preduplet or learnuplet
+        if collection_name == 'algo':
+            # TODO: add celery?
+            task = tasks.algo_learnuplet(inserted.inserted_id)
+        # elif collection_name == 'data':
+        #     # TODO: add celery?
+        #     new_uplet = tasks.data_learnuplet(inserted.inserted_id)
         # return created document
         new_problem = collection.find_one({'_id': inserted.inserted_id})
         output = {k: new_problem[k] for k in post_document[collection_name]}
-        return jsonify({'new_%s' % collection_name: output}), 201
+        return jsonify({'new_%s' % collection_name: output,
+                        'task': task}), 201
     else:
         return jsonify({'Error': 'Page does not exist'}), 404
 
