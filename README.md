@@ -37,6 +37,7 @@ Interact with the api:
 ## Coverage
 We use [coverage.py](http://coverage.readthedocs.io/en/latest/index.html).
 
-`coverage run test_api.py`
-`coverage report -m api.py`
+Run  
+`coverage run test_api.py`  
+`coverage report -m api.py`  
 Without `-m api.py` the coverage report goes to irrelevant depth. We can specify the files to be reported on with `-m file1 file2 ...`
