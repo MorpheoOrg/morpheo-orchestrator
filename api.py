@@ -31,6 +31,9 @@ post_document = {
 
 @app.route('/<collection_name>', methods=['GET'])
 def get_all_documents(collection_name):
+    """
+    Get all the document corresponding to the collection_name.
+    """
     if collection_name in post_document.keys():
         collection = mongo.db[collection_name]
         output = [{k: v for k, v in d.items() if k != '_id'}
@@ -42,6 +45,9 @@ def get_all_documents(collection_name):
 
 @app.route('/<collection_name>', methods=['POST'])
 def add_document(collection_name):
+    """
+    Add document to the collection whose name is collection_name.
+    """
     if collection_name in post_document.keys():
         collection = mongo.db[collection_name]
         try:

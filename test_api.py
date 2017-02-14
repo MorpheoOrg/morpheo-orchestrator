@@ -39,6 +39,12 @@ class APITestCase(unittest.TestCase):
                                             "workflow": "never_written"}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 404)
+        # existing field but wrong key
+        rv = self.app.post('/problem',
+                           data=json.dumps({"dummy": "TT"}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 400)
+        
 
 
 if __name__ == '__main__':

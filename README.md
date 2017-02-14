@@ -33,3 +33,10 @@ Launch the app: `python api.py`
 Interact with the api:
 - GET example: `curl http://127.0.0.1:5000/problem` 
 - POST example: `curl http://127.0.0.1:5000/problem -d '{"uuid": "fc896fb1", "workflow": "ac432fx9"}' -X POST -H "Content-type: application/json"`
+
+## Coverage
+We use [coverage.py](http://coverage.readthedocs.io/en/latest/index.html).
+
+`coverage run test_api.py`
+`coverage report -m api.py`
+Without `-m api.py` the coverage report goes to irrelevant depth. We can specify the files to be reported on with `-m file1 file2 ...`
