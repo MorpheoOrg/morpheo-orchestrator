@@ -23,7 +23,7 @@ pip install -r requirements.txt
 ## Usage
 
 Start MongoDB:  
-on Linux  
+on Linux it is done automatically but you can force it with  
 `sudo service mongod start`  
 on OSX  
 `mongod`

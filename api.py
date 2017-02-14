@@ -6,17 +6,22 @@ import time
 
 app = Flask(__name__)
 
+# Link to prod db or create dummy db for tests
+# Check the environment variable TESTING
 testing = os.environ.get('TESTING', "F")
 if testing == "T":
+    # link to (actually create) dummy db (destroyed at the end of tests)
     app.config['MONGO_DBNAME'] = 'test_orchestrator'
     app.config['TESTING'] = True
 else:
+    # link to prod db
     app.config['MONGO_DBNAME'] = 'orchestrator'
 mongo = PyMongo(app)
 
 
 # Document fields to be added
-# UUID should be created by Orchestrator. TODO define from what and how
+# UUID should be created by Orchestrator.
+# TODO define from what and how
 post_document = {
     'problem': ['uuid', 'workflow'],
     'algo': ['uuid', 'problem'],
@@ -44,9 +49,9 @@ def add_document(collection_name):
             return jsonify({'Error': 'wrong key in posted data'}), 400
         new_document['timestamp_upload'] = int(time.time())
         # TODO: validation on fields
-        problem_id = collection.insert(new_document)
+        inserted = collection.insert_one(new_document)
         # return created document
-        new_problem = collection.find_one({'_id': problem_id})
+        new_problem = collection.find_one({'_id': inserted.inserted_id})
         output = {k: new_problem[k] for k in post_document[collection_name]}
         return jsonify({'new_%s' % collection_name: output}), 201
     else:
