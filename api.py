@@ -28,6 +28,8 @@ post_document = {
     'algo': ['uuid', 'problem'],
     'data': ['uuid', 'problems'],
 }
+# Existing collections
+list_collection = list(post_document.keys()) + ['learnuplet', 'preduplet']
 
 
 @app.route('/<collection_name>', methods=['GET'])
@@ -35,7 +37,7 @@ def get_all_documents(collection_name):
     """
     Get all the document corresponding to the collection_name.
     """
-    if collection_name in post_document.keys():
+    if collection_name in list_collection:
         collection = mongo.db[collection_name]
         output = [{k: v for k, v in d.items() if k != '_id'}
                   for d in collection.find()]
@@ -62,16 +64,16 @@ def add_document(collection_name):
         new_document['timestamp_upload'] = int(time.time())
         # TODO: validation on fields + check element does not exist
         inserted = collection.insert_one(new_document)
+        # find back created document
+        new_document = collection.find_one({'_id': inserted.inserted_id})
+        output = {k: new_document[k] for k in post_document[collection_name]}
         # create preduplet or learnuplet
         if collection_name == 'algo':
             # TODO: add celery?
-            task = tasks.algo_learnuplet(inserted.inserted_id)
+            task = tasks.algo_learnuplet(new_document["uuid"])
         # elif collection_name == 'data':
         #     # TODO: add celery?
         #     new_uplet = tasks.data_learnuplet(inserted.inserted_id)
-        # return created document
-        new_problem = collection.find_one({'_id': inserted.inserted_id})
-        output = {k: new_problem[k] for k in post_document[collection_name]}
         return jsonify({'new_%s' % collection_name: output,
                         'task': task}), 201
     else:
