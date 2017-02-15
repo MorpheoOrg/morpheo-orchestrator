@@ -57,14 +57,14 @@ class APITestCase(unittest.TestCase):
                            data=json.dumps({"uuid": "P2", "workflow": "W2"}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 201)
-        # add data for this problem. TODO change api to send list of data...
+        # add data for this problem.
         nb_data = 10
-        for i in range(nb_data):
-            rv = self.app.post('/data',
-                               data=json.dumps({"uuid": "D%s" % i,
-                                                "problems": ["P1", "P2"]}),
-                               content_type='application/json')
-            self.assertEqual(rv.status_code, 201)
+        rv = self.app.post('/data',
+                           data=json.dumps({"uuid": ["D%s" % i
+                                                     for i in range(nb_data)],
+                                            "problems": ["P1", "P2"]}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 201)
         # add algo
         rv = self.app.post('/algo',
                            data=json.dumps({"uuid": "A1", "problem": "P2"}),
@@ -75,7 +75,6 @@ class APITestCase(unittest.TestCase):
         if nb_data % size_batch > 0:
             nb_learnuplet += 1
         self.assertEqual(self.db.learnuplet.find().count(), nb_learnuplet)
-
 
 
 if __name__ == '__main__':
