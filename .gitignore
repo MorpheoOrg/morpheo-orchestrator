@@ -1,0 +1,3 @@
+*.pyc
+*.DS_*
+__pycache__

@@ -21,8 +21,9 @@ mongo = PyMongo(app)
 
 
 # Document fields to be added
-# UUID should be created by Orchestrator.
-# TODO define from what and how
+# UUID should be created by Orchestrator. TODO define from what and how
+# data: uuid can be one element or a list, in this case all element have same
+# problems
 post_document = {
     'problem': ['uuid', 'workflow'],
     'algo': ['uuid', 'problem'],
@@ -50,31 +51,44 @@ def get_all_documents(collection_name):
 def add_document(collection_name):
     """
     Add document to the collection whose name is collection_name.
-    TODO upload several data at the same time????
     """
     if collection_name in post_document.keys():
         task = ""
         collection = mongo.db[collection_name]
         try:
             request_data = request.get_json()
-            new_document = {k: request_data[k]
-                            for k in post_document[collection_name]}
+            timestamp = int(time.time())
+            # TODO: validation on fields + check element does not exist
+            # if upload of multiple elements
+            if type(request_data["uuid"]) is list:
+                new_docs = []
+                for uuid in request_data["uuid"]:
+                    new_doc = {k: request_data[k] for k in
+                               post_document[collection_name] if k != "uuid"}
+                    new_doc['uuid'] = uuid
+                    new_doc['timestamp'] = timestamp
+                    new_docs.append(new_doc)
+            # if upload of one element
+            else:
+                new_doc = {k: request_data[k]
+                           for k in post_document[collection_name]}
+                new_doc['timestamp'] = timestamp
+                new_docs = [new_doc]
         except KeyError:
             return jsonify({'Error': 'wrong key in posted data'}), 400
-        new_document['timestamp_upload'] = int(time.time())
-        # TODO: validation on fields + check element does not exist
-        inserted = collection.insert_one(new_document)
-        # find back created document
-        new_document = collection.find_one({'_id': inserted.inserted_id})
-        output = {k: new_document[k] for k in post_document[collection_name]}
+        inserted_ids = collection.insert_many(new_docs).inserted_ids
+        # find back created document(s)
+        uuid_new_docs = collection.find({'_id': {"$in": inserted_ids}}).\
+            distinct("uuid")
         # create preduplet or learnuplet
         if collection_name == 'algo':
             # TODO: add celery?
-            task = tasks.algo_learnuplet(new_document["uuid"])
+            for uuid_new_doc in uuid_new_docs:
+                task += tasks.algo_learnuplet(uuid_new_doc)
         # elif collection_name == 'data':
         #     # TODO: add celery?
         #     new_uplet = tasks.data_learnuplet(inserted.inserted_id)
-        return jsonify({'new_%s' % collection_name: output,
+        return jsonify({'uuid_new_%s' % collection_name: uuid_new_docs,
                         'task': task}), 201
     else:
         return jsonify({'Error': 'Page does not exist'}), 404
