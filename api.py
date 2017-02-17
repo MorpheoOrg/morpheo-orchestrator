@@ -59,6 +59,7 @@ def add_document(collection_name):
             request_data = request.get_json()
             timestamp = int(time.time())
             # TODO: validation on fields + check element does not exist
+            # TODO: check element exists on Storage
             # if upload of multiple elements
             if type(request_data["uuid"]) is list:
                 new_docs = []

@@ -9,7 +9,7 @@ import json
 os.environ['TESTING'] = "T"
 from api import app
 from api import list_collection
-from tasks import size_batch
+from tasks import n_cv
 
 
 class APITestCase(unittest.TestCase):
@@ -71,10 +71,7 @@ class APITestCase(unittest.TestCase):
                            content_type='application/json')
         self.assertEqual(rv.status_code, 201)
         # check learnuplet were created
-        nb_learnuplet = nb_data // size_batch
-        if nb_data % size_batch > 0:
-            nb_learnuplet += 1
-        self.assertEqual(self.db.learnuplet.find().count(), nb_learnuplet)
+        self.assertEqual(self.db.learnuplet.find().count(), n_cv)
 
 
 if __name__ == '__main__':
