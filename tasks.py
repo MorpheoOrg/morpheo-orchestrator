@@ -56,17 +56,38 @@ def algo_learnuplet(algo_uuid):
                           "perf": None,
                           "status": "todo"}
         api.mongo.db.learnuplet.insert_one(new_learnuplet)
-    return "New learnuplet(s) successfully created"
+    return "New learnuplet(s) successfully created from algo"
 
 
-# def data_learnuplet(problem_uuid, data_uuids):
-#    """
-#    Fill existing or create new learnuplet with data_uuids (list of data uuid)
-#    for a problem (given its uuid)
-#    """
-#     new_data = api.mongo.db.data.find({"uuid": {"$in": data_uuids}})
-#    tofill_learnuplet = api.mongo.db.learnuplet.find({"problem": problem_uuid,
-#                                                      "status": "tofill"})
-#
-#    # for learnuplet in tofill_learnuplet:
-#        # Do we add data to all learnuplet??
+def data_learnuplet(problem_uuid, data_uuids):
+    """
+    Fill existing or create new learnuplet with data_uuids (list of data uuid)
+    for a problem (given its uuid)
+    """
+    # fill existing learnuplets corresponding to the same problem
+    api.mongo.db.learnuplet.update_many(
+        {"problem": problem_uuid, "status": "tofill"},
+        {"$push": {"data": {"$each": data_uuids}}})
+    # create new learnuplets for algo of the same problem,
+    # which were not waiting for update
+    uuid_filled_model = api.mongo.db.learnuplet.find(
+        {"problem": problem_uuid, "status": "tofill"}).distinct("model")
+    new_learnuplet_models = api.mongo.db.learnuplet.find(
+        {"problem": problem_uuid, "model" : {"$nin": uuid_filled_model},
+         "status": {"$in": ["done", "donup"]}}).distinct("model")
+    for new_learnuplet_model in new_learnuplet_models:
+        new_learnuplet = {"problem": problem_uuid,
+                          "model": new_learnuplet_model,
+                          "data": data_uuids,
+                          "worker": None,
+                          "perf": None,
+                          "status": "tofill"}
+        api.mongo.db.learnuplet.insert_one(new_learnuplet)
+    # if enough data in learnuplet, change status to todo
+    api.mongo.db.learnuplet.update_many(
+        {"problem": problem_uuid, "status": "tofill",
+         "data": {"$exists": True},
+         "$where": "this.data.length > %s" % size_batch_update},
+        {"$set": {"status": "todo"}})
+    return ("Learnuplets filled or created from data for problem %s"
+            % problem_uuid)

@@ -86,9 +86,10 @@ def add_document(collection_name):
             # TODO: add celery?
             for uuid_new_doc in uuid_new_docs:
                 task += tasks.algo_learnuplet(uuid_new_doc)
-        # elif collection_name == 'data':
-        #     # TODO: add celery?
-        #     new_uplet = tasks.data_learnuplet(inserted.inserted_id)
+        elif collection_name == 'data':
+            # TODO: add celery?
+            for pb_uuid in request_data["problems"]:
+                task = tasks.data_learnuplet(pb_uuid, uuid_new_docs)
         return jsonify({'uuid_new_%s' % collection_name: uuid_new_docs,
                         'task': task}), 201
     else:

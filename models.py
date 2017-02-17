@@ -38,7 +38,7 @@ class Learnuplet(db.Document):
     worker = db.UUIDField()
     perf = db.FloadField()
     status = db.StringField(max_length=8)  # tofill, todo,
-                                           # pending, done (and updated)
+                                           # pending, done, donup (and updated)
 
 
 class Preduplet(db.EmbeddedDocument):
