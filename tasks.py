@@ -36,8 +36,11 @@ def algo_learnuplet(algo_uuid):
     Create new learnuplet when adding a new algo given its uuid. It looks for
     all active data, ie data associated to the same problem as the algo
     Hyp: one algo is associated to one model only
-    TODO: algo are trained with all existing data!!
-    TODO: validate with Mattthieu
+
+    :param algo_uuid: uuid of the algo
+    :type algo_uuid: uuid
+    :return: number of created learnuplets
+    :rtype: integer
     """
     new_algo = api.mongo.db.algo.find_one({"uuid": algo_uuid})
     problem = api.mongo.db.problem.find_one({"uuid": new_algo["problem"]})
@@ -56,18 +59,25 @@ def algo_learnuplet(algo_uuid):
                           "perf": None,
                           "status": "todo"}
         api.mongo.db.learnuplet.insert_one(new_learnuplet)
-    return "New learnuplet(s) successfully created from algo"
+    return len(data_learnuplets)
 
 
 def data_learnuplet(problem_uuid, data_uuids):
     """
     Fill existing or create new learnuplet with data_uuids (list of data uuid)
     for a problem (given its uuid)
+
+    :param problem_uuid: uuid of the problem
+    :param data_uuids: list of data uuid
+    :type problem_uuid: uuid
+    :type data_uuids: list
+    :return: number of created and filled learnuplets
+    :rtype: integer
     """
     # fill existing learnuplets corresponding to the same problem
-    api.mongo.db.learnuplet.update_many(
+    n = api.mongo.db.learnuplet.update_many(
         {"problem": problem_uuid, "status": "tofill"},
-        {"$push": {"data": {"$each": data_uuids}}})
+        {"$push": {"data": {"$each": data_uuids}}}).modified_count
     # create new learnuplets for algo of the same problem,
     # which were not waiting for update
     uuid_filled_model = api.mongo.db.learnuplet.find(
@@ -76,6 +86,7 @@ def data_learnuplet(problem_uuid, data_uuids):
         {"problem": problem_uuid, "model" : {"$nin": uuid_filled_model},
          "status": {"$in": ["done", "donup"]}}).distinct("model")
     for new_learnuplet_model in new_learnuplet_models:
+        n += 1
         new_learnuplet = {"problem": problem_uuid,
                           "model": new_learnuplet_model,
                           "data": data_uuids,
@@ -89,5 +100,4 @@ def data_learnuplet(problem_uuid, data_uuids):
          "data": {"$exists": True},
          "$where": "this.data.length > %s" % size_batch_update},
         {"$set": {"status": "todo"}})
-    return ("Learnuplets filled or created from data for problem %s"
-            % problem_uuid)
+    return n

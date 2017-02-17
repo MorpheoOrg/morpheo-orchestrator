@@ -53,7 +53,7 @@ def add_document(collection_name):
     Add document to the collection whose name is collection_name.
     """
     if collection_name in post_document.keys():
-        task = ""
+        n_learnuplets = 0
         collection = mongo.db[collection_name]
         try:
             request_data = request.get_json()
@@ -85,13 +85,13 @@ def add_document(collection_name):
         if collection_name == 'algo':
             # TODO: add celery?
             for uuid_new_doc in uuid_new_docs:
-                task += tasks.algo_learnuplet(uuid_new_doc)
+                n_learnuplets += tasks.algo_learnuplet(uuid_new_doc)
         elif collection_name == 'data':
             # TODO: add celery?
             for pb_uuid in request_data["problems"]:
-                task = tasks.data_learnuplet(pb_uuid, uuid_new_docs)
+                n_learnuplets += tasks.data_learnuplet(pb_uuid, uuid_new_docs)
         return jsonify({'uuid_new_%s' % collection_name: uuid_new_docs,
-                        'task': task}), 201
+                        'new_learnuplets': n_learnuplets}), 201
     else:
         return jsonify({'Error': 'Page does not exist'}), 404
 

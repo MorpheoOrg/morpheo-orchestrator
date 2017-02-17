@@ -57,7 +57,8 @@ class APITestCase(unittest.TestCase):
                            data=json.dumps({"uuid": "P2", "workflow": "W2"}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 201)
-        # add data for this problem.
+        # add data for this problem and check there is no new learnuplet
+        # as no algo have been uploaded
         nb_data = 10
         rv = self.app.post('/data',
                            data=json.dumps({"uuid": ["D%s" % i
@@ -65,6 +66,8 @@ class APITestCase(unittest.TestCase):
                                             "problems": ["P1", "P2"]}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 201)
+        self.assertEqual(
+            json.loads(rv.get_data(as_text=True))["new_learnuplets"], 0)
         # add algo
         rv = self.app.post('/algo',
                            data=json.dumps({"uuid": "A1", "problem": "P2"}),
