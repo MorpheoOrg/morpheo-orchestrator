@@ -47,19 +47,22 @@ def algo_learnuplet(algo_uuid):
     # Find all active data associated to the same problem
     active_data = api.mongo.db.data.find({"problems": problem["uuid"]}).\
         distinct("uuid")
-    # Create learnuplet for each fold
-    train_idx_learnuplets = cross_val(len(active_data))
-    data_learnuplets = [list(np.array(active_data)[idx_learnuplet])
-                        for idx_learnuplet in train_idx_learnuplets]
-    for data in data_learnuplets:
-        new_learnuplet = {"problem": problem["uuid"],
-                          "model": algo_uuid,
-                          "data": data,
-                          "worker": None,
-                          "perf": None,
-                          "status": "todo"}
-        api.mongo.db.learnuplet.insert_one(new_learnuplet)
-    return len(data_learnuplets)
+    # Create learnuplet for each fold if enough data exist
+    if len(active_data) > 0:
+        train_idx_learnuplets = cross_val(len(active_data))
+        data_learnuplets = [list(np.array(active_data)[idx_learnuplet])
+                            for idx_learnuplet in train_idx_learnuplets]
+        for data in data_learnuplets:
+            new_learnuplet = {"problem": problem["uuid"],
+                              "model": algo_uuid,
+                              "data": data,
+                              "worker": None,
+                              "perf": None,
+                              "status": "todo"}
+            api.mongo.db.learnuplet.insert_one(new_learnuplet)
+        return len(data_learnuplets)
+    else:
+        return 0
 
 
 def data_learnuplet(problem_uuid, data_uuids):

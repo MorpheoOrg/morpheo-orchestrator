@@ -9,6 +9,7 @@ from api import db  # to be defined in api...
 class Problem(db.document):
     uuid = db.UUIDField()
     workflow = db.UUIDField()
+    timestamp_upload = db.DateTimeField()
 
 
 class Poster(db.document):
