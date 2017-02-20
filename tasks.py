@@ -104,3 +104,26 @@ def data_learnuplet(problem_uuid, data_uuids):
          "$where": "this.data.length > %s" % size_batch_update},
         {"$set": {"status": "todo"}})
     return n
+
+
+def create_preduplet(new_preduplet):
+    """
+    Create new preduplet
+
+    :param new_preduplet: Contains the data uuids on which the prediction is
+    requested and the associated problem
+    :type new_preduplet: dictionary with keys data, problem, timestamp_request
+    :return: 1 if creation of a preduplet, 0 if no model found
+    """
+    learnuplet_best_model = api.mongo.db.learnuplet.find_one(
+        {"perf": {"$exists": True}, "problem": new_preduplet["problem"]},
+        sort=[("perf", 1)])
+    if learnuplet_best_model:
+        new_preduplet["model"] = learnuplet_best_model["model"]
+        new_preduplet["status"] = "todo"
+        new_preduplet["worker"] = None
+        new_preduplet["timestamp_done"] = None
+        api.mongo.db.preduplet.insert_one(new_preduplet)
+        return 1
+    else:
+        return 0

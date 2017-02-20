@@ -93,12 +93,12 @@ class APITestCase(unittest.TestCase):
                                   for i in ["tofill", "donup"]])
         # add learnuplet with status tofill and already trained
         self.db.learnuplet.insert_many([{"data": ["DD1"], "problem": "P3",
-                                         "model": ["A3_tofill"], "worker": None,
+                                         "model": "A3_tofill", "worker": None,
                                          "perf": None, "status": "tofill"},
                                         {"data": ["DD%s" % i
                                                   for i in range(n_data)],
                                          "problem": "P3",
-                                         "model": ["A3_donup"], "worker": None,
+                                         "model": "A3_donup", "worker": None,
                                          "perf": None, "status": "donup"}])
         # add new data and check if learnuplets are correctly updated
         rv = self.app.post('/data',
@@ -114,6 +114,40 @@ class APITestCase(unittest.TestCase):
             self.assertEqual(
                 self.db.learnuplet.find({"problem": "P3", "status": "todo"}).
                 count(), 2)
+
+    def test_request_prediction(self):
+        # add learnuplet
+        self.db.learnuplet.insert_many([{"data": ["DL%s" % i for i
+                                                  in range(size_batch_update)],
+                                         "problem": "PP",
+                                         "model": "AP1", "worker": "bobor",
+                                         "perf": 0.96, "status": "donup"},
+                                        {"data": ["DL%s" % i for i
+                                                  in range(size_batch_update)],
+                                         "problem": "PP",
+                                         "model": "AP2", "worker": "bobor",
+                                         "perf": 0.98, "status": "donup"}])
+        # request possible prediction and check preduplet has been created
+        rv = self.app.post('/prediction',
+                           data=json.dumps({"data": ["DP%s" % i
+                                                     for i in range(10)],
+                                            "problem": "PP"}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 201)
+        self.assertEqual(self.db.preduplet.find({"problem": "PP",
+                                                 "status": "todo"}).count(), 1)
+        # wrong key in request
+        rv = self.app.post('/prediction',
+                           data=json.dumps({"problem": "PP"}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 400)
+        # non existing model or problem
+        rv = self.app.post('/prediction',
+                           data=json.dumps({"data": ["DPB1"],
+                                            "problem": "IDONTEXIST"}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 400)
+
 
 
 if __name__ == '__main__':

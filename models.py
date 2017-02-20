@@ -48,4 +48,6 @@ class Preduplet(db.EmbeddedDocument):
     model = db.UUIDField()
     worker = db.UUIDField()
     status = db.StringField(max_length=8)
+    timestamp_request = db.DateTimeField()
+    timestamp_done = db.DateTimeField()
 '''

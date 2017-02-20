@@ -28,6 +28,7 @@ post_document = {
     'problem': ['uuid', 'workflow'],
     'algo': ['uuid', 'problem'],
     'data': ['uuid', 'problems'],
+    'prediction' : ['data', 'problem']
 }
 # Existing collections
 list_collection = list(post_document.keys()) + ['learnuplet', 'preduplet']
@@ -83,17 +84,36 @@ def add_document(collection_name):
             distinct("uuid")
         # create preduplet or learnuplet
         if collection_name == 'algo':
-            # TODO: add celery?
             for uuid_new_doc in uuid_new_docs:
                 n_learnuplets += tasks.algo_learnuplet(uuid_new_doc)
         elif collection_name == 'data':
-            # TODO: add celery?
             for pb_uuid in request_data["problems"]:
                 n_learnuplets += tasks.data_learnuplet(pb_uuid, uuid_new_docs)
         return jsonify({'uuid_new_%s' % collection_name: uuid_new_docs,
                         'new_learnuplets': n_learnuplets}), 201
     else:
         return jsonify({'Error': 'Page does not exist'}), 404
+
+
+@app.route('/prediction', methods=['POST'])
+def request_prediction():
+    """
+    Request a prediction on data for a given problem
+    User must post the list of data uuids and the problem uuid
+    """
+    try:
+        request_data = request.get_json()
+        new_preduplet = {k: request_data[k]
+                         for k in post_document['prediction']}
+        new_preduplet['timestamp_request'] = int(time.time())
+        n_preduplet = tasks.create_preduplet(new_preduplet)
+        if n_preduplet:
+            return jsonify({'new_preduplets': n_preduplet}), 201
+        else:
+            return jsonify({'Error': 'no problem or trained model'}), 400
+    except KeyError:
+        return jsonify({'Error': 'wrong key in posted data'}), 400
+
 
 if __name__ == '__main__':
     app.run(debug=True)
