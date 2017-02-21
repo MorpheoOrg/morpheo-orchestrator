@@ -10,7 +10,7 @@ from pymongo import MongoClient
 os.environ['TESTING'] = "T"
 from api import app
 from api import list_collection
-from tasks import n_cv, size_batch_update
+from tasks import size_batch_update
 
 
 class APITestCase(unittest.TestCase):
@@ -81,7 +81,7 @@ class APITestCase(unittest.TestCase):
                            content_type='application/json')
         self.assertEqual(rv.status_code, 201)
         # check learnuplet were created
-        self.assertEqual(self.db.learnuplet.find({"model": "A1"}).count(), n_cv)
+        self.assertEqual(self.db.learnuplet.find({"model": "A1"}).count(), 1)
 
 
     def test_create_data(self):
@@ -90,7 +90,7 @@ class APITestCase(unittest.TestCase):
         # add associated problem first
         self.db.problem.insert_one({"uuid": "P3", "workflow": "W3",
                                     "test_dataset": ["TD1", "TD2"],
-                                    "size_train_dataset": 4})
+                                    "size_train_dataset": n_data_new / 2})
         # add "preexisting" data
         self.db.data.insert_many([{"uuid": "DD%s" % i, "problems": "P3",
                                    "timestamp_upload": int(time.time())}
@@ -100,11 +100,13 @@ class APITestCase(unittest.TestCase):
                                    "timestamp_upload": int(time.time())}
                                   for i in ["tofill", "donup"]])
         # add learnuplet with status tofill and already trained
-        self.db.learnuplet.insert_many([{"data": ["DD1"], "problem": "P3",
+        self.db.learnuplet.insert_many([{"train_data": ["DD1"],
+                                         "test_data": ["TT1"], "problem": "P3",
                                          "model": "A3_tofill", "worker": None,
                                          "perf": None, "status": "tofill"},
-                                        {"data": ["DD%s" % i
+                                        {"train_data": ["DD%s" % i
                                                   for i in range(n_data)],
+                                         "test_data": ["TT1"],
                                          "problem": "P3",
                                          "model": "A3_donup", "worker": None,
                                          "perf": None, "status": "donup"}])
@@ -125,14 +127,14 @@ class APITestCase(unittest.TestCase):
 
     def test_request_prediction(self):
         # add learnuplet
-        self.db.learnuplet.insert_many([{"data": ["DL%s" % i for i
+        self.db.learnuplet.insert_many([{"train_data": ["DL%s" % i for i
                                                   in range(size_batch_update)],
-                                         "problem": "PP",
+                                         "problem": "PP", "test_data": ["TT1"],
                                          "model": "AP1", "worker": "bobor",
                                          "perf": 0.96, "status": "donup"},
-                                        {"data": ["DL%s" % i for i
+                                        {"train_data": ["DL%s" % i for i
                                                   in range(size_batch_update)],
-                                         "problem": "PP",
+                                         "problem": "PP", "test_data": ["TT2"],
                                          "model": "AP2", "worker": "bobor",
                                          "perf": 0.98, "status": "donup"}])
         # request possible prediction and check preduplet has been created

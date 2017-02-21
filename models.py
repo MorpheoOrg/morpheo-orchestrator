@@ -36,7 +36,8 @@ class Data(db.document):
 
 class Learnuplet(db.Document):
     problem = db.UUIDField()
-    data = db.ListField(db.UUIDField())
+    train_data = db.ListField(db.UUIDField())
+    test_data = db.ListField(db.UUIDField())
     model = db.UUIDField()
     worker = db.UUIDField()
     perf = db.FloadField()
