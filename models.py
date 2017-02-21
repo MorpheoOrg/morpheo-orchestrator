@@ -10,6 +10,8 @@ class Problem(db.document):
     uuid = db.UUIDField()
     workflow = db.UUIDField()
     timestamp_upload = db.DateTimeField()
+    test_dataset = db.ListField(db.UUIDField())
+    size_train_dataset = db.IntegerField()
 
 
 class Poster(db.document):

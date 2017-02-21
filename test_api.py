@@ -37,13 +37,17 @@ class APITestCase(unittest.TestCase):
     def test_create_problem(self):
         # existing field
         rv = self.app.post('/problem',
-                           data=json.dumps({"uuid": "P1", "workflow": "W1"}),
+                           data=json.dumps({"uuid": "P1", "workflow": "W1",
+                                            "test_dataset": ["TD1", "TD2"],
+                                            "size_train_dataset": 4}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 201)
         # wrong field
         rv = self.app.post('/dummy_field',
                            data=json.dumps({"uuid": "ha",
-                                            "workflow": "never_written"}),
+                                            "workflow": "never_written",
+                                            "test_dataset": ["TD1", "TD2"],
+                                            "size_train_dataset": 4}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 404)
         # existing field but wrong key
@@ -55,7 +59,9 @@ class APITestCase(unittest.TestCase):
     def test_create_algo(self):
         # add associated problem first
         rv = self.app.post('/problem',
-                           data=json.dumps({"uuid": "P2", "workflow": "W2"}),
+                           data=json.dumps({"uuid": "P2", "workflow": "W2",
+                                            "test_dataset": ["TD1", "TD2"],
+                                            "size_train_dataset": 4}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 201)
         # add data for this problem and check there is no new learnuplet
@@ -82,7 +88,9 @@ class APITestCase(unittest.TestCase):
         n_data = 10
         n_data_new = 10
         # add associated problem first
-        self.db.problem.insert_one({"uuid": "P3", "workflow": "W3"})
+        self.db.problem.insert_one({"uuid": "P3", "workflow": "W3",
+                                    "test_dataset": ["TD1", "TD2"],
+                                    "size_train_dataset": 4})
         # add "preexisting" data
         self.db.data.insert_many([{"uuid": "DD%s" % i, "problems": "P3",
                                    "timestamp_upload": int(time.time())}

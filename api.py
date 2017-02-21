@@ -25,7 +25,7 @@ mongo = PyMongo(app)
 # data: uuid can be one element or a list, in this case all element have same
 # problems
 post_document = {
-    'problem': ['uuid', 'workflow'],
+    'problem': ['uuid', 'workflow', 'test_dataset', 'size_train_dataset'],
     'algo': ['uuid', 'problem'],
     'data': ['uuid', 'problems'],
     'prediction' : ['data', 'problem']
