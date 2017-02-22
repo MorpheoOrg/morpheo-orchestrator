@@ -15,14 +15,12 @@ from tasks import size_batch_update
 
 class APITestCase(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         self.app = app.test_client()
         self.client = MongoClient()
         self.db = self.client[app.config["MONGO_DBNAME"]]
 
-    @classmethod
-    def tearDownClass(self):
+    def tearDown(self):
         self.client.drop_database(app.config["MONGO_DBNAME"])
 
     def test_get_all_documents(self):
@@ -100,16 +98,13 @@ class APITestCase(unittest.TestCase):
                                    "timestamp_upload": int(time.time())}
                                   for i in ["tofill", "done"]])
         # add learnuplet with status tofill and already trained
-        self.db.learnuplet.insert_many([{"train_data": ["DD1"],
-                                         "test_data": ["TT1"], "problem": "P3",
-                                         "model": "A3_tofill", "worker": None,
-                                         "perf": None, "status": "tofill"},
-                                        {"train_data": ["DD%s" % i
-                                                  for i in range(n_data)],
-                                         "test_data": ["TT1"],
-                                         "problem": "P3",
-                                         "model": "A3_done", "worker": None,
-                                         "perf": None, "status": "done"}])
+        self.db.learnuplet.insert_many([
+            {"train_data": ["DD1"], "test_data": ["TT1"], "problem": "P3",
+             "model": "A3_tofill", "worker": None, "perf": None,
+             "status": "tofill", "uuid": "L1"},
+            {"train_data": ["DD%s" % i for i in range(n_data)],
+             "test_data": ["TT1"], "problem": "P3", "model": "A3_done",
+             "worker": None, "perf": None, "status": "done", "uuid": "L2"}])
         # add new data and check if learnuplets are correctly updated
         rv = self.app.post('/data',
                            data=json.dumps({"uuid": ["D3%s" % i for i
@@ -127,16 +122,13 @@ class APITestCase(unittest.TestCase):
 
     def test_request_prediction(self):
         # add learnuplet
-        self.db.learnuplet.insert_many([{"train_data": ["DL%s" % i for i
-                                                  in range(size_batch_update)],
-                                         "problem": "PP", "test_data": ["TT1"],
-                                         "model": "AP1", "worker": "bobor",
-                                         "perf": 0.96, "status": "done"},
-                                        {"train_data": ["DL%s" % i for i
-                                                  in range(size_batch_update)],
-                                         "problem": "PP", "test_data": ["TT2"],
-                                         "model": "AP2", "worker": "bobor",
-                                         "perf": 0.98, "status": "done"}])
+        self.db.learnuplet.insert_many([
+            {"train_data": ["DL%s" % i for i in range(size_batch_update)],
+             "problem": "PP", "test_data": ["TT1"], "model": "AP1",
+             "worker": "bobor", "perf": 0.96, "status": "done", "uuid": "L3"},
+            {"train_data": ["DL%s" % i for i in range(size_batch_update)],
+             "problem": "PP", "test_data": ["TT2"], "model": "AP2",
+             "worker": "bobor", "perf": 0.98, "status": "done", "uuid": "L4"}])
         # request possible prediction and check preduplet has been created
         rv = self.app.post('/prediction',
                            data=json.dumps({"data": ["DP%s" % i
@@ -158,7 +150,34 @@ class APITestCase(unittest.TestCase):
                            content_type='application/json')
         self.assertEqual(rv.status_code, 400)
 
-
+    def test_get_uplet_status(self):
+        # add learnuplet
+        self.db.learnuplet.insert_many([
+            {"train_data": ["DL%s" % i for i in range(size_batch_update)],
+              "problem": "PU", "test_data": ["TT1"], "model": "AP1",
+             "worker": None, "perf": None, "status": "todo", "uuid": "L5"},
+            {"train_data": ["DL%s" % i for i in range(size_batch_update)],
+              "problem": "PU", "test_data": ["TT2"], "model": "AP2",
+             "worker": "bobor", "perf": 0.98, "status": "done", "uuid": "L6"}])
+        # add preduplet
+        self.db.preduplet.insert_many([
+            {"uuid": "P1", "problem": "PU", "data": ["T1", "T2"], "model": "M1",
+             "worker": None, "status": "todo",  "timestamp_request": 1,
+             "timestamp_done": None},
+            {"uuid": "P2", "problem": "PU", "data": ["T3", "T4"], "model": "M1",
+             "worker": "bobor", "status": "done",  "timestamp_request": 1,
+             "timestamp_done": 2}])
+        # should be ok
+        for uplet in ['learnuplet', 'preduplet']:
+            for status in ['todo', 'done']:
+                rv = self.app.get('/%s/%s' % (uplet, status))
+                self.assertEqual(rv.status_code, 200)
+                n = len(json.loads(
+                    rv.get_data(as_text=True))["%ss_%s" % (uplet, status)])
+                self.assertEqual(n, 1)
+        # dummy field
+        rv = self.app.get('/preduplet/toerror')
+        self.assertEqual(rv.status_code, 404)
 
 if __name__ == '__main__':
     unittest.main()
