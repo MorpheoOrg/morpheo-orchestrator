@@ -69,7 +69,7 @@ def data_learnuplet(problem_uuid, data_uuids):
         {"problem": problem_uuid, "status": "tofill"}).distinct("model")
     new_learnuplet_models = api.mongo.db.learnuplet.find(
         {"problem": problem_uuid, "model" : {"$nin": uuid_filled_model},
-         "status": {"$in": ["done", "donup"]}}).distinct("model")
+         "status": {"$in": ["done"]}}).distinct("model")
     problem = api.mongo.db.problem.find_one({"uuid": problem_uuid})
     if problem and new_learnuplet_models:
         test_data = problem["test_dataset"]

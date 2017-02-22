@@ -98,7 +98,7 @@ class APITestCase(unittest.TestCase):
         # add algo
         self.db.algo.insert_many([{"uuid": "A3_%s" % i, "problem": "P3",
                                    "timestamp_upload": int(time.time())}
-                                  for i in ["tofill", "donup"]])
+                                  for i in ["tofill", "done"]])
         # add learnuplet with status tofill and already trained
         self.db.learnuplet.insert_many([{"train_data": ["DD1"],
                                          "test_data": ["TT1"], "problem": "P3",
@@ -108,8 +108,8 @@ class APITestCase(unittest.TestCase):
                                                   for i in range(n_data)],
                                          "test_data": ["TT1"],
                                          "problem": "P3",
-                                         "model": "A3_donup", "worker": None,
-                                         "perf": None, "status": "donup"}])
+                                         "model": "A3_done", "worker": None,
+                                         "perf": None, "status": "done"}])
         # add new data and check if learnuplets are correctly updated
         rv = self.app.post('/data',
                            data=json.dumps({"uuid": ["D3%s" % i for i
@@ -131,12 +131,12 @@ class APITestCase(unittest.TestCase):
                                                   in range(size_batch_update)],
                                          "problem": "PP", "test_data": ["TT1"],
                                          "model": "AP1", "worker": "bobor",
-                                         "perf": 0.96, "status": "donup"},
+                                         "perf": 0.96, "status": "done"},
                                         {"train_data": ["DL%s" % i for i
                                                   in range(size_batch_update)],
                                          "problem": "PP", "test_data": ["TT2"],
                                          "model": "AP2", "worker": "bobor",
-                                         "perf": 0.98, "status": "donup"}])
+                                         "perf": 0.98, "status": "done"}])
         # request possible prediction and check preduplet has been created
         rv = self.app.post('/prediction',
                            data=json.dumps({"data": ["DP%s" % i
