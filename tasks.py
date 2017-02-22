@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import uuid
 import api
 
 # number of samples required to start a new learning phase
@@ -28,7 +29,11 @@ def algo_learnuplet(algo_uuid):
                                               problem["size_train_dataset"])
         train_data = list(np.array(active_data)[train_idx_learnuplets])
         test_data = problem["test_dataset"]
-        new_learnuplet = {"problem": problem["uuid"],
+        # Create UUID for learnuplet from random values
+        learnuplet_uuid = uuid.uuid4()
+        # TODO create model_uuid from algo uuid + param uuid
+        new_learnuplet = {"uuid": learnuplet_uuid,
+                          "problem": problem["uuid"],
                           "model": algo_uuid,
                           "train_data": train_data,
                           "test_data": test_data,
@@ -70,7 +75,11 @@ def data_learnuplet(problem_uuid, data_uuids):
         test_data = problem["test_dataset"]
         for new_learnuplet_model in new_learnuplet_models:
             n += 1
-            new_learnuplet = {"problem": problem_uuid,
+            # Create UUID for learnuplet from random values
+            learnuplet_uuid = uuid.uuid4()
+            # TODO create model_uuid from algo uuid + param uuid
+            new_learnuplet = {"uuid": learnuplet_uuid,
+                              "problem": problem_uuid,
                               "model": new_learnuplet_model,
                               "train_data": data_uuids,
                               "test_data": test_data,
@@ -100,6 +109,7 @@ def create_preduplet(new_preduplet):
         {"perf": {"$exists": True}, "problem": new_preduplet["problem"]},
         sort=[("perf", 1)])
     if learnuplet_best_model:
+        new_preduplet["uuid"] = uuid.uuid4()
         new_preduplet["model"] = learnuplet_best_model["model"]
         new_preduplet["status"] = "todo"
         new_preduplet["worker"] = None

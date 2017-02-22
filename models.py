@@ -35,6 +35,7 @@ class Data(db.document):
 
 
 class Learnuplet(db.Document):
+    uuid = db.UUIDField()
     problem = db.UUIDField()
     train_data = db.ListField(db.UUIDField())
     test_data = db.ListField(db.UUIDField())
@@ -45,7 +46,8 @@ class Learnuplet(db.Document):
                                            # pending, done, donup (and updated)
 
 
-class Preduplet(db.EmbeddedDocument):
+class Preduplet(db.Document):
+    uuid = db.UUIDField()
     problem = db.UUIDField(max_length=50)
     data = db.ListField(db.UUIDField())
     model = db.UUIDField()
