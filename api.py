@@ -134,5 +134,79 @@ def get_uplet_from_status(uplet, status):
         return jsonify({'Error': 'Page does not exist'}), 404
 
 
+@app.route('/worker/<uplet>/<uplet_uuid>', methods=['POST'])
+def set_uplet_worker(uplet, uplet_uuid):
+    """
+    Update the worker and status of a learnuplet or preduplet
+
+    :param uplet: learnuplet or preduplet
+    :param uplet_uuid: learnuplet uuid
+    :type uplet: string
+    :type uplet_uuid: UUID
+    """
+    if uplet in ['learnuplet', 'preduplet']:
+        try:
+            uplet = mongo.db[uplet_uuid]
+            request_data = request.get_json()
+            updated = uplet.update_one(
+                {'uuid': uplet_uuid},
+                {'$set': {'status': 'pending',
+                          'worker': request_data['worker']}})
+            if updated.acknowledged:
+                return jsonify({'%s_worker_set' % uplet: uplet_uuid}), 200
+            else:
+                return jsonify({'Error': 'no worker set for %s %s' %
+                                (uplet, uplet_uuid)}), 400
+        except KeyError:
+            return jsonify({'Error': 'wrong key in posted data'}), 400
+    else:
+        return jsonify({'Error': 'Page does not exist'}), 404
+
+
+@app.route('/learndone/<learnuplet_uuid>', methods=['POST'])
+def update_learnuplet(learnuplet_uuid):
+    """
+    Post output of learning, which updates the corresponding learnuplet
+
+    :param learnuplet_uuid: learnuplet uuid
+    :type learnuplet_uuid: UUID
+    """
+    try:
+        request_data = request.get_json()
+        updated = mongo.db.learnuplet.update_one(
+            {'uuid': learnuplet_uuid},
+            {'$set': {'status': request_data['status'],
+                      'perf': request_data['perf']}})
+        if updated.acknowledged:
+            return jsonify({'updated_learnuplet': learnuplet_uuid}), 200
+        else:
+            return jsonify(
+                {'Error': 'no update of learnuplet %s' % learnuplet_uuid}), 400
+    except KeyError:
+        return jsonify({'Error': 'wrong key in posted data'}), 400
+
+
+@app.route('/preddone/<preduplet_uuid>', methods=['POST'])
+def update_preduplet(preduplet_uuid):
+    """
+    Update status of a preduplet
+
+    :param preduplet_uuid: learnuplet uuid
+    :type preduplet_uuid: UUID
+    """
+    try:
+        request_data = request.get_json()
+        updated = mongo.db.preduplet.update_one(
+            {'uuid': preduplet_uuid},
+            {'$set': {'status': request_data['status']}})
+        if updated.acknowledged:
+            return jsonify({'updated_preduplet': preduplet_uuid}), 200
+        else:
+            return jsonify(
+                {'Error': 'no update of preduplet %s' % preduplet_uuid}), 400
+    except KeyError:
+        return jsonify({'Error': 'wrong key in posted data'}), 400
+
+
 if __name__ == '__main__':
     app.run(debug=True)
