@@ -146,9 +146,9 @@ def set_uplet_worker(uplet, uplet_uuid):
     """
     if uplet in ['learnuplet', 'preduplet']:
         try:
-            uplet = mongo.db[uplet_uuid]
+            collection = mongo.db[uplet]
             request_data = request.get_json()
-            updated = uplet.update_one(
+            updated = collection.update_one(
                 {'uuid': uplet_uuid},
                 {'$set': {'status': 'pending',
                           'worker': request_data['worker']}})
@@ -177,7 +177,7 @@ def update_learnuplet(learnuplet_uuid):
             {'uuid': learnuplet_uuid},
             {'$set': {'status': request_data['status'],
                       'perf': request_data['perf']}})
-        if updated.acknowledged:
+        if updated.modified_count == 1:
             return jsonify({'updated_learnuplet': learnuplet_uuid}), 200
         else:
             return jsonify(
@@ -198,8 +198,9 @@ def update_preduplet(preduplet_uuid):
         request_data = request.get_json()
         updated = mongo.db.preduplet.update_one(
             {'uuid': preduplet_uuid},
-            {'$set': {'status': request_data['status']}})
-        if updated.acknowledged:
+            {'$set': {'status': request_data['status'],
+                      'timestamp_done': int(time.time())}})
+        if updated.modified_count == 1:
             return jsonify({'updated_preduplet': preduplet_uuid}), 200
         else:
             return jsonify(

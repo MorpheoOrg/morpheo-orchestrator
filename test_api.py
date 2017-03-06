@@ -13,6 +13,36 @@ from api import list_collection
 from tasks import size_batch_update
 
 
+def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
+                              status="todo", perf=None, worker=None,
+                              model_prefix="MD_", uuid_prefix="id_"):
+    if type(perf) is not list:
+        perf = [perf] * n_learnuplet
+    list_learnuplets = [
+        {"problem": problem, "worker": worker, "perf": perf[j],
+         "status": status, "model": "%s%s" % (model_prefix, j),
+         "train_data": ["D%s%s" % (i, j) for i in range(n_train)],
+         "test_data": ["DT%s%s" % (i, j) for i in range(n_test)],
+         "uuid": "%s%s" % (uuid_prefix, j)}
+        for j in range(n_learnuplet)]
+    return list_learnuplets
+
+
+def generate_list_preduplets(n_preduplet, n_data=4, problem="PB", model="MD",
+                            worker=None, status="todo", uuid_prefix="id_",
+                            timestamp_request=None, timestamp_done=None):
+    if not timestamp_request:
+        timestamp_request = int(time.time())
+    list_preduplets = [
+        {"problem": problem, "worker": worker, "status": status, "model": model,
+         "data": ["T%s%s" % (i, j) for i in range(n_data)],
+         "timestamp_request": timestamp_request,
+         "timestamp_done": timestamp_done,
+         "uuid": "%s%s" % (uuid_prefix, j)}
+        for j in range(n_preduplet)]
+    return list_preduplets
+
+
 class APITestCase(unittest.TestCase):
 
     def setUp(self):
@@ -90,6 +120,7 @@ class APITestCase(unittest.TestCase):
                                     "test_dataset": ["TD1", "TD2"],
                                     "size_train_dataset": n_data_new / 2})
         # add "preexisting" data
+        # TODO do we need it?? Make it similar to generate_list_learnuplets
         self.db.data.insert_many([{"uuid": "DD%s" % i, "problems": "P3",
                                    "timestamp_upload": int(time.time())}
                                   for i in range(n_data)])
@@ -98,14 +129,13 @@ class APITestCase(unittest.TestCase):
                                    "timestamp_upload": int(time.time())}
                                   for i in ["tofill", "done"]])
         # add learnuplet with status tofill and already trained
-        self.db.learnuplet.insert_many([
-            {"train_data": ["DD1"], "test_data": ["TT1"], "problem": "P3",
-             "model": "A3_tofill", "worker": None, "perf": None,
-             "status": "tofill", "uuid": "L1"},
-            {"train_data": ["DD%s" % i for i in range(n_data)],
-             "test_data": ["TT1"], "problem": "P3", "model": "A3_done",
-             "worker": None, "perf": None, "status": "done", "uuid": "L2"}])
-        # add new data and check if learnuplets are correctly updated
+        learnuplet_tofill = generate_list_learnuplets(
+            1, n_train=1, n_test=1, problem="P3", model_prefix="Atofill",
+            status="tofill")
+        learnuplet_done = generate_list_learnuplets(
+            1, n_train=n_data, n_test=1, problem="P3", model_prefix="Adone",
+            worker="WW", perf=0.99, status="done")
+        self.db.learnuplet.insert_many(learnuplet_tofill + learnuplet_done)
         rv = self.app.post('/data',
                            data=json.dumps({"uuid": ["D3%s" % i for i
                                                      in range(n_data_new)],
@@ -122,13 +152,10 @@ class APITestCase(unittest.TestCase):
 
     def test_request_prediction(self):
         # add learnuplet
-        self.db.learnuplet.insert_many([
-            {"train_data": ["DL%s" % i for i in range(size_batch_update)],
-             "problem": "PP", "test_data": ["TT1"], "model": "AP1",
-             "worker": "bobor", "perf": 0.96, "status": "done", "uuid": "L3"},
-            {"train_data": ["DL%s" % i for i in range(size_batch_update)],
-             "problem": "PP", "test_data": ["TT2"], "model": "AP2",
-             "worker": "bobor", "perf": 0.98, "status": "done", "uuid": "L4"}])
+        learnuplets = generate_list_learnuplets(
+            2, n_train=size_batch_update, n_test=1, problem="PP",
+            worker="bobor", status="done", perf=[0.96, 0.98])
+        self.db.learnuplet.insert_many(learnuplets)
         # request possible prediction and check preduplet has been created
         rv = self.app.post('/prediction',
                            data=json.dumps({"data": ["DP%s" % i
@@ -152,21 +179,17 @@ class APITestCase(unittest.TestCase):
 
     def test_get_uplet_status(self):
         # add learnuplet
-        self.db.learnuplet.insert_many([
-            {"train_data": ["DL%s" % i for i in range(size_batch_update)],
-              "problem": "PU", "test_data": ["TT1"], "model": "AP1",
-             "worker": None, "perf": None, "status": "todo", "uuid": "L5"},
-            {"train_data": ["DL%s" % i for i in range(size_batch_update)],
-              "problem": "PU", "test_data": ["TT2"], "model": "AP2",
-             "worker": "bobor", "perf": 0.98, "status": "done", "uuid": "L6"}])
-        # add preduplet
-        self.db.preduplet.insert_many([
-            {"uuid": "P1", "problem": "PU", "data": ["T1", "T2"], "model": "M1",
-             "worker": None, "status": "todo",  "timestamp_request": 1,
-             "timestamp_done": None},
-            {"uuid": "P2", "problem": "PU", "data": ["T3", "T4"], "model": "M1",
-             "worker": "bobor", "status": "done",  "timestamp_request": 1,
-             "timestamp_done": 2}])
+        learnuplet_todo = generate_list_learnuplets(
+            1, n_train=size_batch_update, n_test=1, problem="PU")
+        learnuplet_done = generate_list_learnuplets(
+            1, n_train=size_batch_update, n_test=1, problem="PU",
+            worker="bobor", perf=0.98, status="done")
+        self.db.learnuplet.insert_many(learnuplet_todo + learnuplet_done)
+        preduplet_todo = generate_list_preduplets(1)
+        preduplet_done = generate_list_preduplets(
+            1, worker="bobor", status="done", timestamp_request=1,
+            timestamp_done=2)
+        self.db.preduplet.insert_many(preduplet_todo + preduplet_done)
         # should be ok
         for uplet in ['learnuplet', 'preduplet']:
             for status in ['todo', 'done']:
@@ -178,6 +201,68 @@ class APITestCase(unittest.TestCase):
         # dummy field
         rv = self.app.get('/preduplet/toerror')
         self.assertEqual(rv.status_code, 404)
+
+    def test_set_uplet_worker(self):
+        # add learnuplet and preduplet
+        learnuplet = generate_list_learnuplets(1, uuid_prefix="id_")[0]
+        self.db.learnuplet.insert_one(learnuplet)
+        preduplet = generate_list_preduplets(1, uuid_prefix="id_")[0]
+        self.db.preduplet.insert_one(preduplet)
+        for uplet in ['learnuplet', 'preduplet']:
+            # good request
+            rv = self.app.post('/worker/%s/id_0' % uplet,
+                               data=json.dumps({"worker": "bobor"}),
+                               content_type='application/json')
+            self.assertEqual(rv.status_code, 200)
+            collection = self.db[uplet]
+            self.assertEqual(collection.find({"uuid": "id_0",
+                                              "worker": "bobor"}).count(), 1)
+            # wrong key in request
+            rv = self.app.post('/worker/%s/id_0' % uplet,
+                               data=json.dumps({"rocker": "oups"}),
+                               content_type='application/json')
+            self.assertEqual(rv.status_code, 400)
+        # wrong uplet name
+        rv = self.app.post('/worker/uplet/id_0',
+                           data=json.dumps({"worker": "oups"}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 404)
+
+    def test_update_learnuplet(self):
+        # add learnuplet
+        learnuplet = generate_list_learnuplets(
+            1, uuid_prefix="id_", status="pending", worker="bobor")[0]
+        self.db.learnuplet.insert_one(learnuplet)
+        # should be ok
+        rv = self.app.post('/learndone/id_0',
+                           data=json.dumps({"status": "done", "perf": 0.9}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(self.db.learnuplet.find({"uuid": "id_0",
+                                                  "perf": 0.9}).count(), 1)
+        # wrong key in request
+        rv = self.app.post('/learndone/id_0',
+                           data=json.dumps({"sttys": "oups", "perf": 0.9}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 400)
+
+    def test_update_preduplet(self):
+        # add preduplet
+        preduplet = generate_list_preduplets(
+            1, uuid_prefix="id_", status="pending", worker="bobor")[0]
+        self.db.preduplet.insert_one(preduplet)
+        # should be ok
+        rv = self.app.post('/preddone/id_0',
+                           data=json.dumps({"status": "done"}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(self.db.preduplet.find({"uuid": "id_0",
+                                                  "status": "done"}).count(), 1)
+        # wrong key in request
+        rv = self.app.post('/preddone/id_0', data=json.dumps({"sttys": "oups"}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 400)
+
 
 if __name__ == '__main__':
     unittest.main()
