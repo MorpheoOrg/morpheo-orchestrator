@@ -105,12 +105,20 @@ class APITestCase(unittest.TestCase):
             json.loads(rv.get_data(as_text=True))["new_learnuplets"], 0)
         # add algo
         rv = self.app.post('/algo',
-                           data=json.dumps({"uuid": "A1", "problem": "P2"}),
+                           data=json.dumps({"uuid": "A", "problem": "P2"}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 201)
         # check learnuplet were created
-        self.assertEqual(self.db.learnuplet.find({"model": "A1"}).count(), 1)
-
+        self.assertEqual(self.db.learnuplet.find({"model": "A"}).count(), 3)
+        self.assertEqual(self.db.learnuplet.
+                         find_one({"model": "A",
+                                   "rank": 0})["status"], "todo")
+        self.assertEqual(self.db.learnuplet.
+                         find_one({"model": "A",
+                                   "rank": 1})["status"], "waiting")
+        self.assertEqual(self.db.learnuplet.
+                         find_one({"model": "A",
+                                   "rank": 2})["status"], "tofill")
 
     def test_create_data(self):
         n_data = 10

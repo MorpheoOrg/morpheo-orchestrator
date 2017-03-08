@@ -25,26 +25,43 @@ def algo_learnuplet(algo_uuid):
         distinct("uuid")
     # Create learnuplet for each fold if enough data exist
     try:
-        train_idx_learnuplets = random.sample(range(len(active_data)),
-                                              problem["size_train_dataset"])
-        train_data = list(np.array(active_data)[train_idx_learnuplets])
+        # permuation of all active data and scattering into chunks
+        n_data = len(active_data)
+        sz_chunk = problem["size_train_dataset"]
+        perm_list = random.sample(range(n_data), n_data)
+        chunks_uuid = [list(np.array(active_data)[perm_list[i: i + sz_chunk]])
+                       for i in range(0, n_data, sz_chunk)]
         test_data = problem["test_dataset"]
-        # Create UUID for learnuplet from random values
-        learnuplet_uuid = uuid.uuid4()
-        # TODO create model_uuid from algo uuid + param uuid
-        new_learnuplet = {"uuid": learnuplet_uuid,
-                          "problem": problem["uuid"],
-                          "model": algo_uuid,
-                          "train_data": train_data,
-                          "test_data": test_data,
-                          "worker": None,
-                          "perf": None,
-                          "status": "todo"}
-        api.mongo.db.learnuplet.insert_one(new_learnuplet)
+        # for each chunk of data create a learnuplet
+        for i, train_data in enumerate(chunks_uuid):
+            # TODO create model_uuid from algo uuid + param uuid
+            # create an appropriate status for the learnuplet
+            if i == 0:
+                status = 'todo'
+            elif i == len(chunks_uuid) - 1 and len(train_data) < sz_chunk:
+                status = 'tofill'
+            else:
+                status = 'waiting'
+            new_learnuplet = {"uuid": uuid.uuid4(),
+                              "problem": problem["uuid"],
+                              "model": algo_uuid,
+                              "train_data": train_data,
+                              "test_data": test_data,
+                              "worker": None,
+                              "perf": None,
+                              "status": status,
+                              'rank': i}
+            api.mongo.db.learnuplet.insert_one(new_learnuplet)
         return 1
     except ValueError:
         # not enough data to train the model
         return 0
+
+
+    # # Find the last learnuplet and its number/ranking
+    # last_learnuplet = api.mongo.db.learnuplet.find_one({"problem": problem},
+    #                                                    sort=[("rank", 1)])
+    # last_rank = last_learnuplet['rank']
 
 
 def data_learnuplet(problem_uuid, data_uuids):
