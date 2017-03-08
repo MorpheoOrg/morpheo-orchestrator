@@ -177,31 +177,6 @@ class APITestCase(unittest.TestCase):
                            content_type='application/json')
         self.assertEqual(rv.status_code, 400)
 
-    def test_get_uplet_status(self):
-        # add learnuplet
-        learnuplet_todo = generate_list_learnuplets(
-            1, n_train=size_batch_update, n_test=1, problem="PU")
-        learnuplet_done = generate_list_learnuplets(
-            1, n_train=size_batch_update, n_test=1, problem="PU",
-            worker="bobor", perf=0.98, status="done")
-        self.db.learnuplet.insert_many(learnuplet_todo + learnuplet_done)
-        preduplet_todo = generate_list_preduplets(1)
-        preduplet_done = generate_list_preduplets(
-            1, worker="bobor", status="done", timestamp_request=1,
-            timestamp_done=2)
-        self.db.preduplet.insert_many(preduplet_todo + preduplet_done)
-        # should be ok
-        for uplet in ['learnuplet', 'preduplet']:
-            for status in ['todo', 'done']:
-                rv = self.app.get('/%s/%s' % (uplet, status))
-                self.assertEqual(rv.status_code, 200)
-                n = len(json.loads(
-                    rv.get_data(as_text=True))["%ss_%s" % (uplet, status)])
-                self.assertEqual(n, 1)
-        # dummy field
-        rv = self.app.get('/preduplet/toerror')
-        self.assertEqual(rv.status_code, 404)
-
     def test_set_uplet_worker(self):
         # add learnuplet and preduplet
         learnuplet = generate_list_learnuplets(1, uuid_prefix="id_")[0]

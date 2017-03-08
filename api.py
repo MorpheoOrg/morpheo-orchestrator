@@ -117,26 +117,6 @@ def request_prediction():
         return jsonify({'Error': 'wrong key in posted data'}), 400
 
 
-@app.route('/<uplet>/<status>', methods=['GET'])
-def get_uplet_from_status(uplet, status):
-    """
-    Get learnuplet or preduplet with a given status.
-    Mainly exposed to the Compute.
-
-    :param uplet: learnuplet or preduplet
-    :param status: status of the uplet (todo, done)
-    :type uplet: string
-    :type status: string
-    """
-    if uplet in ["learnuplet", "preduplet"] and status in ["todo", "done"]:
-        collection = mongo.db[uplet]
-        output = [{k: v for k, v in d.items() if k != '_id'}
-                  for d in collection.find({"status": status})]
-        return jsonify({'%ss_%s' % (uplet, status): output}), 200
-    else:
-        return jsonify({'Error': 'Page does not exist'}), 404
-
-
 @app.route('/worker/<uplet>/<uplet_uuid>', methods=['POST'])
 def set_uplet_worker(uplet, uplet_uuid):
     """
