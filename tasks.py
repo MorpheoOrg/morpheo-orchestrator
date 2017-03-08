@@ -11,7 +11,7 @@ def algo_learnuplet(algo_uuid):
     """
     Create new learnuplet when adding a new algo given its uuid. It looks for
     all active data, ie data associated to the same problem as the algo
-    Hyp: one algo is associated to one model only
+    Hypothesis so far: one algo is associated to one model only
 
     :param algo_uuid: uuid of the algo
     :type algo_uuid: uuid
@@ -59,18 +59,22 @@ def data_learnuplet(problem_uuid, data_uuids):
     :return: number of created and filled learnuplets
     :rtype: integer
     """
-    # fill existing learnuplets corresponding to the same problem
+    # fill existing learnuplets with status tofill and with the same problem
+    # allows more data than size_batch_update
     n = api.mongo.db.learnuplet.update_many(
         {"problem": problem_uuid, "status": "tofill"},
         {"$push": {"train_data": {"$each": data_uuids}}}).modified_count
     # create new learnuplets for algo of the same problem,
-    # which were not waiting for update
-    uuid_filled_model = api.mongo.db.learnuplet.find(
+    # which do not have an existing learnuplet with status tofill
+    # first, find the tofills
+    uuid_tofill_model = api.mongo.db.learnuplet.find(
         {"problem": problem_uuid, "status": "tofill"}).distinct("model")
+    # second, take the models without tofills
     new_learnuplet_models = api.mongo.db.learnuplet.find(
-        {"problem": problem_uuid, "model" : {"$nin": uuid_filled_model},
+        {"problem": problem_uuid, "model": {"$nin": uuid_tofill_model},
          "status": {"$in": ["done"]}}).distinct("model")
     problem = api.mongo.db.problem.find_one({"uuid": problem_uuid})
+    # third, for these models create learnuplets
     if problem and new_learnuplet_models:
         test_data = problem["test_dataset"]
         for new_learnuplet_model in new_learnuplet_models:

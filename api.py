@@ -28,7 +28,7 @@ post_document = {
     'problem': ['uuid', 'workflow', 'test_dataset', 'size_train_dataset'],
     'algo': ['uuid', 'problem'],
     'data': ['uuid', 'problems'],
-    'prediction' : ['data', 'problem']
+    'prediction': ['data', 'problem']
 }
 # Existing collections
 list_collection = list(post_document.keys()) + ['learnuplet', 'preduplet']
@@ -78,7 +78,9 @@ def add_document(collection_name):
                 new_docs = [new_doc]
         except KeyError:
             return jsonify({'Error': 'wrong key in posted data'}), 400
+        # put docs in db
         inserted_ids = collection.insert_many(new_docs).inserted_ids
+        # returns the documents uuids and create learnuplets
         # find back created document(s)
         uuid_new_docs = collection.find({'_id': {"$in": inserted_ids}}).\
             distinct("uuid")
@@ -118,7 +120,8 @@ def request_prediction():
 @app.route('/<uplet>/<status>', methods=['GET'])
 def get_uplet_from_status(uplet, status):
     """
-    Get learnuplet or preduplet with a given status
+    Get learnuplet or preduplet with a given status.
+    Mainly exposed to the Compute.
 
     :param uplet: learnuplet or preduplet
     :param status: status of the uplet (todo, done)
@@ -138,6 +141,7 @@ def get_uplet_from_status(uplet, status):
 def set_uplet_worker(uplet, uplet_uuid):
     """
     Update the worker and status of a learnuplet or preduplet
+    Mainly exposed to the Compute.
 
     :param uplet: learnuplet or preduplet
     :param uplet_uuid: learnuplet uuid
@@ -167,10 +171,12 @@ def set_uplet_worker(uplet, uplet_uuid):
 def update_learnuplet(learnuplet_uuid):
     """
     Post output of learning, which updates the corresponding learnuplet
+    Mainly exposed to the Compute.
 
     :param learnuplet_uuid: learnuplet uuid
     :type learnuplet_uuid: UUID
     """
+    # TODO: check identity of worker
     try:
         request_data = request.get_json()
         updated = mongo.db.learnuplet.update_one(
