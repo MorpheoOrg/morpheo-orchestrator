@@ -148,7 +148,7 @@ def set_uplet_worker(uplet, uplet_uuid):
 
 
 @app.route('/learndone/<learnuplet_uuid>', methods=['POST'])
-def update_learnuplet(learnuplet_uuid):
+def report_perf_learnuplet(learnuplet_uuid):
     """
     Post output of learning, which updates the corresponding learnuplet
     Mainly exposed to the Compute.
@@ -161,7 +161,7 @@ def update_learnuplet(learnuplet_uuid):
         request_data = request.get_json()
         updated = mongo.db.learnuplet.update_one(
             {'uuid': learnuplet_uuid},
-            {'$set': {'status': request_data['status'],
+            {'$set': {'status': 'done',
                       'perf': request_data['perf']}})
         if updated.modified_count == 1:
             return jsonify({'updated_learnuplet': learnuplet_uuid}), 200

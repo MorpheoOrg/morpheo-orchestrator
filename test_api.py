@@ -203,21 +203,21 @@ class APITestCase(unittest.TestCase):
                            content_type='application/json')
         self.assertEqual(rv.status_code, 404)
 
-    def test_update_learnuplet(self):
+    def test_report_perf_learnuplet(self):
         # add learnuplet
         learnuplet = generate_list_learnuplets(
             1, uuid_prefix="id_", status="pending", worker="bobor")[0]
         self.db.learnuplet.insert_one(learnuplet)
         # should be ok
         rv = self.app.post('/learndone/id_0',
-                           data=json.dumps({"status": "done", "perf": 0.9}),
+                           data=json.dumps({"perf": 0.9}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(self.db.learnuplet.find({"uuid": "id_0",
                                                   "perf": 0.9}).count(), 1)
         # wrong key in request
         rv = self.app.post('/learndone/id_0',
-                           data=json.dumps({"sttys": "oups", "perf": 0.9}),
+                           data=json.dumps({"sttys": "oups", "perfff": 0.9}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 400)
 
@@ -232,9 +232,10 @@ class APITestCase(unittest.TestCase):
                            content_type='application/json')
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(self.db.preduplet.find({"uuid": "id_0",
-                                                  "status": "done"}).count(), 1)
+                                                 "status": "done"}).count(), 1)
         # wrong key in request
-        rv = self.app.post('/preddone/id_0', data=json.dumps({"sttys": "oups"}),
+        rv = self.app.post('/preddone/id_0',
+                           data=json.dumps({"sttys": "oups"}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 400)
 
