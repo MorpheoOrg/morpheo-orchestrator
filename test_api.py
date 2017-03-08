@@ -10,12 +10,11 @@ from pymongo import MongoClient
 os.environ['TESTING'] = "T"
 from api import app
 from api import list_collection
-from tasks import size_batch_update
 
 
 def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
                               status="todo", perf=None, worker=None,
-                              model_prefix="MD_", uuid_prefix="id_"):
+                              model_prefix="MD_", uuid_prefix="id_", rank=0):
     if type(perf) is not list:
         perf = [perf] * n_learnuplet
     list_learnuplets = [
@@ -23,7 +22,7 @@ def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
          "status": status, "model": "%s%s" % (model_prefix, j),
          "train_data": ["D%s%s" % (i, j) for i in range(n_train)],
          "test_data": ["DT%s%s" % (i, j) for i in range(n_test)],
-         "uuid": "%s%s" % (uuid_prefix, j)}
+         "uuid": "%s%s" % (uuid_prefix, j), "rank": rank}
         for j in range(n_learnuplet)]
     return list_learnuplets
 
@@ -98,7 +97,7 @@ class APITestCase(unittest.TestCase):
         rv = self.app.post('/data',
                            data=json.dumps({"uuid": ["D%s" % i
                                                      for i in range(nb_data)],
-                                            "problems": ["P1", "P2"]}),
+                                            "problems": ["P2"]}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 201)
         self.assertEqual(
@@ -116,9 +115,6 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(self.db.learnuplet.
                          find_one({"model": "A",
                                    "rank": 1})["status"], "waiting")
-        self.assertEqual(self.db.learnuplet.
-                         find_one({"model": "A",
-                                   "rank": 2})["status"], "tofill")
 
     def test_create_data(self):
         n_data = 10
@@ -126,24 +122,20 @@ class APITestCase(unittest.TestCase):
         # add associated problem first
         self.db.problem.insert_one({"uuid": "P3", "workflow": "W3",
                                     "test_dataset": ["TD1", "TD2"],
-                                    "size_train_dataset": n_data_new / 2})
+                                    "size_train_dataset": n_data_new // 2})
         # add "preexisting" data
         # TODO do we need it?? Make it similar to generate_list_learnuplets
         self.db.data.insert_many([{"uuid": "DD%s" % i, "problems": "P3",
                                    "timestamp_upload": int(time.time())}
                                   for i in range(n_data)])
         # add algo
-        self.db.algo.insert_many([{"uuid": "A3_%s" % i, "problem": "P3",
-                                   "timestamp_upload": int(time.time())}
-                                  for i in ["tofill", "done"]])
+        self.db.algo.insert_many([{"uuid": "A3_0", "problem": "P3",
+                                   "timestamp_upload": int(time.time())}])
         # add learnuplet with status tofill and already trained
-        learnuplet_tofill = generate_list_learnuplets(
-            1, n_train=1, n_test=1, problem="P3", model_prefix="Atofill",
-            status="tofill")
         learnuplet_done = generate_list_learnuplets(
-            1, n_train=n_data, n_test=1, problem="P3", model_prefix="Adone",
+            1, n_train=n_data, n_test=1, problem="P3", model_prefix="A3",
             worker="WW", perf=0.99, status="done")
-        self.db.learnuplet.insert_many(learnuplet_tofill + learnuplet_done)
+        self.db.learnuplet.insert_many(learnuplet_done)
         rv = self.app.post('/data',
                            data=json.dumps({"uuid": ["D3%s" % i for i
                                                      in range(n_data_new)],
@@ -153,15 +145,16 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(
             json.loads(rv.get_data(as_text=True))["new_learnuplets"], 2)
         self.assertEqual(self.db.learnuplet.find({"problem": "P3"}).count(), 3)
-        if n_data_new + 1 > size_batch_update:
-            self.assertEqual(
-                self.db.learnuplet.find({"problem": "P3", "status": "todo"}).
-                count(), 2)
+        self.assertEqual(self.db.learnuplet.find({"problem": "P3",
+                                                  "status": "todo"}).count(), 1)
+        self.assertEqual(
+            self.db.learnuplet.find({"problem": "P3",
+                                     "status": "waiting"}).count(), 1)
 
     def test_request_prediction(self):
         # add learnuplet
         learnuplets = generate_list_learnuplets(
-            2, n_train=size_batch_update, n_test=1, problem="PP",
+            2, n_train=5, n_test=1, problem="PP",
             worker="bobor", status="done", perf=[0.96, 0.98])
         self.db.learnuplet.insert_many(learnuplets)
         # request possible prediction and check preduplet has been created

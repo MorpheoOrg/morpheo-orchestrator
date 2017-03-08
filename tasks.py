@@ -3,8 +3,35 @@ import numpy as np
 import uuid
 import api
 
-# number of samples required to start a new learning phase
-size_batch_update = 2
+
+def create_learnuplet(new_data, sz_batch, test_data, problem_uuid, algo_uuid,
+                      start_rank):
+    list_new_learnuplets = []
+    # permuation of all active data and scattering into batchs
+    n_data = len(new_data)
+    perm_list = random.sample(range(n_data), n_data)
+    batchs_uuid = [list(np.array(new_data)[perm_list[i: i + sz_batch]])
+                   for i in range(0, n_data, sz_batch)]
+    # for each batch of data create a learnuplet
+    for i, train_data in enumerate(batchs_uuid):
+        j = i + start_rank
+        # TODO create model_uuid from algo uuid + param uuid
+        # create an appropriate status for the learnuplet
+        if j == start_rank:
+            status = 'todo'
+        else:
+            status = 'waiting'
+        new_learnuplet = {"uuid": uuid.uuid4(),
+                          "problem": problem_uuid,
+                          "model": algo_uuid,
+                          "train_data": train_data,
+                          "test_data": test_data,
+                          "worker": None,
+                          "perf": None,
+                          "status": status,
+                          'rank': j}
+        list_new_learnuplets.append(new_learnuplet)
+    return list_new_learnuplets
 
 
 def algo_learnuplet(algo_uuid):
@@ -25,95 +52,48 @@ def algo_learnuplet(algo_uuid):
         distinct("uuid")
     # Create learnuplet for each fold if enough data exist
     try:
-        # permuation of all active data and scattering into chunks
-        n_data = len(active_data)
-        sz_chunk = problem["size_train_dataset"]
-        perm_list = random.sample(range(n_data), n_data)
-        chunks_uuid = [list(np.array(active_data)[perm_list[i: i + sz_chunk]])
-                       for i in range(0, n_data, sz_chunk)]
+        sz_batch = problem["size_train_dataset"]
         test_data = problem["test_dataset"]
-        # for each chunk of data create a learnuplet
-        for i, train_data in enumerate(chunks_uuid):
-            # TODO create model_uuid from algo uuid + param uuid
-            # create an appropriate status for the learnuplet
-            if i == 0:
-                status = 'todo'
-            elif i == len(chunks_uuid) - 1 and len(train_data) < sz_chunk:
-                status = 'tofill'
-            else:
-                status = 'waiting'
-            new_learnuplet = {"uuid": uuid.uuid4(),
-                              "problem": problem["uuid"],
-                              "model": algo_uuid,
-                              "train_data": train_data,
-                              "test_data": test_data,
-                              "worker": None,
-                              "perf": None,
-                              "status": status,
-                              'rank': i}
-            api.mongo.db.learnuplet.insert_one(new_learnuplet)
-        return 1
+        problem_uuid = problem["uuid"]
+        new_learnuplets = create_learnuplet(
+            active_data, sz_batch, test_data, problem_uuid, algo_uuid, 0)
+        api.mongo.db.learnuplet.insert_many(new_learnuplets)
+        return len(new_learnuplets)
     except ValueError:
         # not enough data to train the model
         return 0
 
 
-    # # Find the last learnuplet and its number/ranking
-    # last_learnuplet = api.mongo.db.learnuplet.find_one({"problem": problem},
-    #                                                    sort=[("rank", 1)])
-    # last_rank = last_learnuplet['rank']
-
-
 def data_learnuplet(problem_uuid, data_uuids):
     """
-    Fill existing or create new learnuplet with data_uuids (list of data uuid)
+    Create new learnuplets with data_uuids (list of data uuid)
     for a problem (given its uuid)
 
     :param problem_uuid: uuid of the problem
     :param data_uuids: list of data uuid
     :type problem_uuid: uuid
     :type data_uuids: list
-    :return: number of created and filled learnuplets
+    :return: number of created learnuplets
     :rtype: integer
     """
-    # fill existing learnuplets with status tofill and with the same problem
-    # allows more data than size_batch_update
-    n = api.mongo.db.learnuplet.update_many(
-        {"problem": problem_uuid, "status": "tofill"},
-        {"$push": {"train_data": {"$each": data_uuids}}}).modified_count
-    # create new learnuplets for algo of the same problem,
-    # which do not have an existing learnuplet with status tofill
-    # first, find the tofills
-    uuid_tofill_model = api.mongo.db.learnuplet.find(
-        {"problem": problem_uuid, "status": "tofill"}).distinct("model")
-    # second, take the models without tofills
-    new_learnuplet_models = api.mongo.db.learnuplet.find(
-        {"problem": problem_uuid, "model": {"$nin": uuid_tofill_model},
-         "status": {"$in": ["done"]}}).distinct("model")
+    n = 0  # new learnuplets
     problem = api.mongo.db.problem.find_one({"uuid": problem_uuid})
-    # third, for these models create learnuplets
-    if problem and new_learnuplet_models:
+    sz_batch = problem["size_train_dataset"]
+    # create new learnuplets for algo of the same problem
+    list_uuid_models = api.mongo.db.learnuplet.find(
+        {"problem": problem_uuid}).distinct("model")
+    if list_uuid_models:
+        sz_batch = problem["size_train_dataset"]
         test_data = problem["test_dataset"]
-        for new_learnuplet_model in new_learnuplet_models:
-            n += 1
-            # Create UUID for learnuplet from random values
-            learnuplet_uuid = uuid.uuid4()
-            # TODO create model_uuid from algo uuid + param uuid
-            new_learnuplet = {"uuid": learnuplet_uuid,
-                              "problem": problem_uuid,
-                              "model": new_learnuplet_model,
-                              "train_data": data_uuids,
-                              "test_data": test_data,
-                              "worker": None,
-                              "perf": None,
-                              "status": "tofill"}
-            api.mongo.db.learnuplet.insert_one(new_learnuplet)
-    # if enough data in learnuplet, change status to todo
-    api.mongo.db.learnuplet.update_many(
-        {"problem": problem_uuid, "status": "tofill",
-         "train_data": {"$exists": True},
-         "$where": "this.train_data.length > %s" % size_batch_update},
-        {"$set": {"status": "todo"}})
+        for uuid_model in list_uuid_models:
+            last_rank = api.mongo.db.learnuplet.find_one(
+                {"rank": {"$exists": True}, "model": uuid_model},
+                sort=[("rank", -1)])["rank"]
+            new_learnuplets = create_learnuplet(data_uuids, sz_batch, test_data,
+                                                problem_uuid, uuid_model,
+                                                last_rank + 1)
+            api.mongo.db.learnuplet.insert_many(new_learnuplets)
+            n += len(new_learnuplets)
     return n
 
 
@@ -128,7 +108,7 @@ def create_preduplet(new_preduplet):
     """
     learnuplet_best_model = api.mongo.db.learnuplet.find_one(
         {"perf": {"$exists": True}, "problem": new_preduplet["problem"]},
-        sort=[("perf", 1)])
+        sort=[("perf", -1)])
     if learnuplet_best_model:
         new_preduplet["uuid"] = uuid.uuid4()
         new_preduplet["model"] = learnuplet_best_model["model"]
