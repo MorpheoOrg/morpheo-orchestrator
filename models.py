@@ -39,11 +39,16 @@ class Learnuplet(db.Document):
     problem = db.UUIDField()
     train_data = db.ListField(db.UUIDField())
     test_data = db.ListField(db.UUIDField())
-    model = db.UUIDField()
+    algo = db.UUIDField()
+    model_start = db.UUIDField()
+    model_end = db.UUIDField()
     worker = db.UUIDField()
     perf = db.FloadField()
     status = db.StringField(max_length=8)  # waiting, todo
-                                           # pending, done
+                                           # pending, done, failed
+    rank = db.IntegerField()
+    timestamp_creation = db.DateTimeField()
+    timestamp_done = db.DateTimeField()
 
 
 class Preduplet(db.Document):

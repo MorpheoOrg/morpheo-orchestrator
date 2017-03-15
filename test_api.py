@@ -14,15 +14,24 @@ from api import list_collection
 
 def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
                               status="todo", perf=None, worker=None,
-                              model_prefix="MD_", uuid_prefix="id_", rank=0):
+                              algo_prefix="MD_", model_prefix="MD_",
+                              uuid_prefix="id_", rank=0,
+                              timestamp_creation=None, timestamp_done=None):
     if type(perf) is not list:
         perf = [perf] * n_learnuplet
+    if not timestamp_creation:
+        timestamp_creation = int(time.time())
+    if rank == 0 and algo_prefix != model_prefix:
+        algo_prefix = model_prefix
     list_learnuplets = [
         {"problem": problem, "worker": worker, "perf": perf[j],
-         "status": status, "model": "%s%s" % (model_prefix, j),
+         "status": status, "algo": "%s%s_s" % (algo_prefix, j),
+         "model_start": "%s%s_s" % (model_prefix, j),
+         "model_end": "%s%s_e" % (model_prefix, j), "rank": rank,
          "train_data": ["D%s%s" % (i, j) for i in range(n_train)],
          "test_data": ["DT%s%s" % (i, j) for i in range(n_test)],
-         "uuid": "%s%s" % (uuid_prefix, j), "rank": rank}
+         "uuid": "%s%s" % (uuid_prefix, j), "timestamp_done": timestamp_done,
+         "timestamp_creation": timestamp_creation}
         for j in range(n_learnuplet)]
     return list_learnuplets
 
@@ -108,12 +117,12 @@ class APITestCase(unittest.TestCase):
                            content_type='application/json')
         self.assertEqual(rv.status_code, 201)
         # check learnuplet were created
-        self.assertEqual(self.db.learnuplet.find({"model": "A"}).count(), 3)
+        self.assertEqual(self.db.learnuplet.find({"algo": "A"}).count(), 3)
+        learnuplet_0 = self.db.learnuplet.find_one({"model_start": "A",
+                                                    "rank": 0})
+        self.assertEqual(learnuplet_0["status"], "todo")
         self.assertEqual(self.db.learnuplet.
-                         find_one({"model": "A",
-                                   "rank": 0})["status"], "todo")
-        self.assertEqual(self.db.learnuplet.
-                         find_one({"model": "A",
+                         find_one({"model_start": learnuplet_0["model_end"],
                                    "rank": 1})["status"], "waiting")
 
     def test_create_data(self):
@@ -131,7 +140,7 @@ class APITestCase(unittest.TestCase):
         # add algo
         self.db.algo.insert_many([{"uuid": "A3_0", "problem": "P3",
                                    "timestamp_upload": int(time.time())}])
-        # add learnuplet with status tofill and already trained
+        # add learnuplet which are already trained
         learnuplet_done = generate_list_learnuplets(
             1, n_train=n_data, n_test=1, problem="P3", model_prefix="A3",
             worker="WW", perf=0.99, status="done")

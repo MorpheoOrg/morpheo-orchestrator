@@ -84,7 +84,7 @@ def add_document(collection_name):
         # find back created document(s)
         uuid_new_docs = collection.find({'_id': {"$in": inserted_ids}}).\
             distinct("uuid")
-        # create preduplet or learnuplet
+        # create learnuplets
         if collection_name == 'algo':
             for uuid_new_doc in uuid_new_docs:
                 n_learnuplets += tasks.algo_learnuplet(uuid_new_doc)
