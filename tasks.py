@@ -5,6 +5,11 @@ import uuid
 import api
 
 
+# TODO: Modify creation of learnuplet
+# Do not specify model_start at learnuplet creation for learnuplets with
+# status: waiting, but once perf of previous learnuplet is given by compute
+
+
 def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
                       algo_uuid, model_uuid_start, start_rank):
     """
@@ -121,6 +126,10 @@ def data_learnuplet(problem_uuid, data_uuids):
                 {"rank": {"$exists": True}, "algo": uuid_algo},
                 sort=[("rank", -1)])
             last_rank = last_learnuplet["rank"]
+            # TODO modify. Problem: what if pending models????
+            best_learnuplet = api.mongo.db.learnuplet.find_one(
+                {"rank": {"$exists": True}, "algo": uuid_algo},
+                sort=[("rank", -1)])
             last_model = last_learnuplet["model_end"]
             new_learnuplets = create_learnuplet(data_uuids, sz_batch, test_data,
                                                 problem_uuid, uuid_algo,
