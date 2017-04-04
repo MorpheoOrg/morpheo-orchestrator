@@ -2,6 +2,7 @@ import os
 import unittest
 import json
 import time
+import numpy as np
 from pymongo import MongoClient
 
 # It is important that the next two line be in that order (sorry PEP8)
@@ -23,8 +24,15 @@ def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
         timestamp_creation = int(time.time())
     if rank == 0 and algo_prefix != model_prefix:
         algo_prefix = model_prefix
+    if status == "done":
+        train_perf = list(np.random.randn(n_train))
+        test_perf = list(np.random.randn(n_test))
+    else:
+        train_perf = None
+        test_perf = None
     list_learnuplets = [
         {"problem": problem, "worker": worker, "perf": perf[j],
+         "train_perf": train_perf, "test_perf": test_perf,
          "status": status, "algo": "%s%s_s" % (algo_prefix, j),
          "model_start": "%s%s_s" % (model_prefix, j),
          "model_end": "%s%s_e" % (model_prefix, j), "rank": rank,
@@ -204,6 +212,11 @@ class APITestCase(unittest.TestCase):
             collection = self.db[uplet]
             self.assertEqual(collection.find({"uuid": "id_0",
                                               "worker": "bobor"}).count(), 1)
+            # learnuplet uuid does not exist
+            rv = self.app.post('/worker/%s/ad_0' % uplet,
+                               data=json.dumps({"worker": "bobor"}),
+                               content_type='application/json')
+            self.assertEqual(rv.status_code, 400)
             # wrong key in request
             rv = self.app.post('/worker/%s/id_0' % uplet,
                                data=json.dumps({"rocker": "oups"}),
@@ -216,17 +229,31 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(rv.status_code, 404)
 
     def test_report_perf_learnuplet_1(self):
+        n_train = 5
+        n_test = 5
+        train_perf = list(np.random.randn(n_train))
+        test_perf = list(np.random.randn(n_test))
         # add learnuplets
         learnuplet = generate_list_learnuplets(
-            1, uuid_prefix="id_", status="pending", worker="bobor")[0]
+            1, n_train=n_train, n_test=n_test, uuid_prefix="id_",
+            status="pending", worker="bobor")[0]
         self.db.learnuplet.insert_one(learnuplet)
         # should be ok
         rv = self.app.post('/learndone/id_0',
-                           data=json.dumps({"perf": 0.9}),
+                           data=json.dumps({"perf": 0.9,
+                                            "train_perf": train_perf,
+                                            "test_perf": test_perf}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(self.db.learnuplet.find({"uuid": "id_0",
                                                   "perf": 0.9}).count(), 1)
+        # wrong learnuplet uuid
+        rv = self.app.post('/learndone/ad_0',
+                           data=json.dumps({"perf": 0.9,
+                                            "train_perf": train_perf,
+                                            "test_perf": test_perf}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 400)
         # wrong key in request
         rv = self.app.post('/learndone/id_0',
                            data=json.dumps({"sttys": "oups", "perfff": 0.9}),
@@ -234,22 +261,30 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(rv.status_code, 400)
 
     def test_report_perf_learnuplet_2(self):
+        n_train = 5
+        n_test = 5
+        train_perf = list(np.random.randn(n_train))
+        test_perf = list(np.random.randn(n_test))
         # add learnuplets
         learnuplet_list = generate_list_learnuplets(
-            1, uuid_prefix="id0_", status="done", rank=0, worker="bobor")
+            1, n_train=n_train, n_test=n_test, uuid_prefix="id0_",
+            status="done", rank=0, worker="bobor")
         learnuplet_list += generate_list_learnuplets(
-            1, uuid_prefix="id1_", status="done", rank=1, worker="bobor")
+            1, n_train=n_train, n_test=n_test, uuid_prefix="id1_",
+            status="done", rank=1, worker="bobor")
         learnuplet_list += generate_list_learnuplets(
-            1, uuid_prefix="id2_", status="pending", rank=2, worker="bobor",
-            model_prefix='B')
+            1, n_train=n_train, n_test=n_test, uuid_prefix="id2_",
+            status="pending", rank=2, worker="bobor", model_prefix='B')
         learnuplet_list += generate_list_learnuplets(
-            1, uuid_prefix="id3_", status="todo", rank=3, worker="bobor",
-            model_prefix='N')
+            1, n_train=n_train, n_test=n_test, uuid_prefix="id3_",
+            status="todo", rank=3, worker="bobor", model_prefix='N')
         for learnuplet in learnuplet_list:
             self.db.learnuplet.insert_one(learnuplet)
         # should be ok
         rv = self.app.post('/learndone/id2_0',
-                           data=json.dumps({"perf": 0.9}),
+                           data=json.dumps({"perf": 0.9,
+                                            "train_perf": train_perf,
+                                            "test_perf": test_perf}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(self.db.learnuplet.find({"uuid": "id2_0",
@@ -271,6 +306,11 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(self.db.preduplet.find({"uuid": "id_0",
                                                  "status": "done"}).count(), 1)
+        # wrong learnuplet uuid
+        rv = self.app.post('/preddone/ad_0',
+                           data=json.dumps({"status": "done"}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 400)
         # wrong key in request
         rv = self.app.post('/preddone/id_0',
                            data=json.dumps({"sttys": "oups"}),

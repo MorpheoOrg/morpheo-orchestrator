@@ -43,7 +43,9 @@ class Learnuplet(db.Document):
     model_start = db.UUIDField()
     model_end = db.UUIDField()
     worker = db.UUIDField()
-    perf = db.FloadField()
+    perf = db.FloadField()                 # perf on all test dataset
+    train_perf = db.ListField(db.FloatField())  # perf on each file
+    test_perf = db.ListField(db.FloatField())   # perf on each file
     status = db.StringField(max_length=8)  # todo
                                            # pending, done, failed
     rank = db.IntegerField()
