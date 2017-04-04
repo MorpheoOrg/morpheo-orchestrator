@@ -5,11 +5,6 @@ import uuid
 import api
 
 
-# TODO: Modify creation of learnuplet
-# Do not specify model_start at learnuplet creation for learnuplets with
-# status: waiting, but once perf of previous learnuplet is given by compute
-
-
 def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
                       algo_uuid, model_uuid_start, start_rank):
     """
@@ -60,6 +55,8 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
                           "test_data": test_data,
                           "worker": None,
                           "perf": None,
+                          "train_perf": None,
+                          "test_perf": None,
                           "status": 'todo',
                           'rank': j,
                           'timestamp_creation': int(time.time()),

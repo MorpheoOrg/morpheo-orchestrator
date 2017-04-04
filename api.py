@@ -135,7 +135,7 @@ def set_uplet_worker(uplet_type, uplet_uuid):
                 {'uuid': uplet_uuid},
                 {'$set': {'status': 'pending',
                           'worker': request_data['worker']}})
-            if updated.acknowledged:
+            if updated.modified_count == 1:
                 return jsonify({'%s_worker_set' % uplet_type: uplet_uuid}), 200
             else:
                 return jsonify({'Error': 'no worker set for %s %s' %
@@ -163,22 +163,23 @@ def report_perf_learnuplet(learnuplet_uuid):
         updated_perf = mongo.db.learnuplet.update_one(
             {'uuid': learnuplet_uuid},
             {'$set': {'status': 'done',
-                      'perf': request_data['perf']}})
-        learnuplet_perf = mongo.db.learnuplet.find_one(
-            {'uuid': learnuplet_uuid})
-        # find learnuplet with best performance
-        best_learnuplet = mongo.db.learnuplet.find_one(
-            {"perf": {"$exists": True}, "algo": learnuplet_perf['algo']},
-            sort=[("perf", -1)])
-        # change model start in next learnuplet
-        next_model_start = best_learnuplet['model_end']
-        updated_next = mongo.db.learnuplet.update_one(
-            {'rank': learnuplet_perf['rank'] + 1,
-             'algo': learnuplet_perf['algo']},
-            {'$set': {'model_start': next_model_start}})
-        # return updated learnupets
-        if updated_perf.modified_count == 1 and\
-           updated_next.modified_count <= 1:
+                      'perf': request_data['perf'],
+                      'train_perf': request_data['train_perf'],
+                      'test_perf': request_data['test_perf']}})
+        if updated_perf.modified_count == 1:
+            learnuplet_perf = mongo.db.learnuplet.find_one(
+                {'uuid': learnuplet_uuid})
+            # find learnuplet with best performance
+            best_learnuplet = mongo.db.learnuplet.find_one(
+                {"perf": {"$exists": True}, "algo": learnuplet_perf['algo']},
+                sort=[("perf", -1)])
+            # change model start in next learnuplet
+            next_model_start = best_learnuplet['model_end']
+            mongo.db.learnuplet.update_one(
+                {'rank': learnuplet_perf['rank'] + 1,
+                 'algo': learnuplet_perf['algo']},
+                {'$set': {'model_start': next_model_start}})
+            # return updated learnupets
             return jsonify({'updated_learnuplet': learnuplet_uuid}), 200
         else:
             return jsonify(
