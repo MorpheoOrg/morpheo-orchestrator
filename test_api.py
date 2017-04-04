@@ -122,8 +122,8 @@ class APITestCase(unittest.TestCase):
                                                     "rank": 0})
         self.assertEqual(learnuplet_0["status"], "todo")
         self.assertEqual(self.db.learnuplet.
-                         find_one({"model_start": learnuplet_0["model_end"],
-                                   "rank": 1})["status"], "waiting")
+                         find_one({"model_start": '',
+                                   "rank": 1})["status"], "todo")
 
     def test_create_data(self):
         n_data = 10
@@ -155,16 +155,18 @@ class APITestCase(unittest.TestCase):
             json.loads(rv.get_data(as_text=True))["new_learnuplets"], 2)
         self.assertEqual(self.db.learnuplet.find({"problem": "P3"}).count(), 3)
         self.assertEqual(self.db.learnuplet.find({"problem": "P3",
-                                                  "status": "todo"}).count(), 1)
+                                                  "status": "todo",
+                                                  "model_start": {"$ne":''}}).count(), 1)
         self.assertEqual(
             self.db.learnuplet.find({"problem": "P3",
-                                     "status": "waiting"}).count(), 1)
+                                     "status": "todo",
+                                     "model_start": ''}).count(), 1)
 
     def test_request_prediction(self):
         # add learnuplet
         learnuplets = generate_list_learnuplets(
             2, n_train=5, n_test=1, problem="PP",
-            worker="bobor", status="done", perf=[0.96, 0.98])
+            worker="  ", status="done", perf=[0.96, 0.98])
         self.db.learnuplet.insert_many(learnuplets)
         # request possible prediction and check preduplet has been created
         rv = self.app.post('/prediction',
@@ -213,8 +215,8 @@ class APITestCase(unittest.TestCase):
                            content_type='application/json')
         self.assertEqual(rv.status_code, 404)
 
-    def test_report_perf_learnuplet(self):
-        # add learnuplet
+    def test_report_perf_learnuplet_1(self):
+        # add learnuplets
         learnuplet = generate_list_learnuplets(
             1, uuid_prefix="id_", status="pending", worker="bobor")[0]
         self.db.learnuplet.insert_one(learnuplet)
@@ -230,6 +232,32 @@ class APITestCase(unittest.TestCase):
                            data=json.dumps({"sttys": "oups", "perfff": 0.9}),
                            content_type='application/json')
         self.assertEqual(rv.status_code, 400)
+
+    def test_report_perf_learnuplet_2(self):
+        # add learnuplets
+        learnuplet_list = generate_list_learnuplets(
+            1, uuid_prefix="id0_", status="done", rank=0, worker="bobor")
+        learnuplet_list += generate_list_learnuplets(
+            1, uuid_prefix="id1_", status="done", rank=1, worker="bobor")
+        learnuplet_list += generate_list_learnuplets(
+            1, uuid_prefix="id2_", status="pending", rank=2, worker="bobor",
+            model_prefix='B')
+        learnuplet_list += generate_list_learnuplets(
+            1, uuid_prefix="id3_", status="todo", rank=3, worker="bobor",
+            model_prefix='N')
+        for learnuplet in learnuplet_list:
+            self.db.learnuplet.insert_one(learnuplet)
+        # should be ok
+        rv = self.app.post('/learndone/id2_0',
+                           data=json.dumps({"perf": 0.9}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(self.db.learnuplet.find({"uuid": "id2_0",
+                                                  "perf": 0.9}).count(), 1)
+        self.assertEqual(self.db.learnuplet.find({"uuid": "id3_0",
+                                                  "status": 'todo',
+                                                  "model_start": 'B0_e'})
+                         .count(), 1)
 
     def test_update_preduplet(self):
         # add preduplet

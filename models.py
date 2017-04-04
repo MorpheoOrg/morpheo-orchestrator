@@ -44,7 +44,7 @@ class Learnuplet(db.Document):
     model_end = db.UUIDField()
     worker = db.UUIDField()
     perf = db.FloadField()
-    status = db.StringField(max_length=8)  # waiting, todo
+    status = db.StringField(max_length=8)  # todo
                                            # pending, done, failed
     rank = db.IntegerField()
     timestamp_creation = db.DateTimeField()

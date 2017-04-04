@@ -21,7 +21,6 @@ mongo = PyMongo(app)
 
 
 # Document fields to be added
-# UUID should be created by Orchestrator. TODO define from what and how
 # data: uuid can be one element or a list, in this case all element have same
 # problems
 post_document = {
@@ -117,30 +116,30 @@ def request_prediction():
         return jsonify({'Error': 'wrong key in posted data'}), 400
 
 
-@app.route('/worker/<uplet>/<uplet_uuid>', methods=['POST'])
-def set_uplet_worker(uplet, uplet_uuid):
+@app.route('/worker/<uplet_type>/<uplet_uuid>', methods=['POST'])
+def set_uplet_worker(uplet_type, uplet_uuid):
     """
     Update the worker and status of a learnuplet or preduplet
     Mainly exposed to the Compute.
 
-    :param uplet: learnuplet or preduplet
+    :param uplet_type: 'learnuplet' or 'preduplet'
     :param uplet_uuid: learnuplet uuid
-    :type uplet: string
+    :type uplet_type: string
     :type uplet_uuid: UUID
     """
-    if uplet in ['learnuplet', 'preduplet']:
+    if uplet_type in ['learnuplet', 'preduplet']:
         try:
-            collection = mongo.db[uplet]
+            collection = mongo.db[uplet_type]
             request_data = request.get_json()
             updated = collection.update_one(
                 {'uuid': uplet_uuid},
                 {'$set': {'status': 'pending',
                           'worker': request_data['worker']}})
             if updated.acknowledged:
-                return jsonify({'%s_worker_set' % uplet: uplet_uuid}), 200
+                return jsonify({'%s_worker_set' % uplet_type: uplet_uuid}), 200
             else:
                 return jsonify({'Error': 'no worker set for %s %s' %
-                                (uplet, uplet_uuid)}), 400
+                                (uplet_type, uplet_uuid)}), 400
         except KeyError:
             return jsonify({'Error': 'wrong key in posted data'}), 400
     else:
@@ -150,8 +149,9 @@ def set_uplet_worker(uplet, uplet_uuid):
 @app.route('/learndone/<learnuplet_uuid>', methods=['POST'])
 def report_perf_learnuplet(learnuplet_uuid):
     """
-    Post output of learning, which updates the corresponding learnuplet
-    Mainly exposed to the Compute.
+    Post output of learning, which updates the corresponding learnuplet.
+    Modify the model_start of subequent learnuplet if performance increase.
+    Only exposed to the Compute.
 
     :param learnuplet_uuid: learnuplet uuid
     :type learnuplet_uuid: UUID
@@ -159,11 +159,26 @@ def report_perf_learnuplet(learnuplet_uuid):
     # TODO: check identity of worker
     try:
         request_data = request.get_json()
-        updated = mongo.db.learnuplet.update_one(
+        # update performance in current learnuplet
+        updated_perf = mongo.db.learnuplet.update_one(
             {'uuid': learnuplet_uuid},
             {'$set': {'status': 'done',
                       'perf': request_data['perf']}})
-        if updated.modified_count == 1:
+        learnuplet_perf = mongo.db.learnuplet.find_one(
+            {'uuid': learnuplet_uuid})
+        # find learnuplet with best performance
+        best_learnuplet = mongo.db.learnuplet.find_one(
+            {"perf": {"$exists": True}, "algo": learnuplet_perf['algo']},
+            sort=[("perf", -1)])
+        # change model start in next learnuplet
+        next_model_start = best_learnuplet['model_end']
+        updated_next = mongo.db.learnuplet.update_one(
+            {'rank': learnuplet_perf['rank'] + 1,
+             'algo': learnuplet_perf['algo']},
+            {'$set': {'model_start': next_model_start}})
+        # return updated learnupets
+        if updated_perf.modified_count == 1 and\
+           updated_next.modified_count <= 1:
             return jsonify({'updated_learnuplet': learnuplet_uuid}), 200
         else:
             return jsonify(
