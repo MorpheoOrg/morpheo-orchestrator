@@ -86,18 +86,14 @@ def algo_learnuplet(algo_uuid):
     active_data = api.mongo.db.data.find({"problems": problem["uuid"]}).\
         distinct("uuid")
     # Create learnuplet for each fold if enough data exist
-    try:
-        sz_batch = problem["size_train_dataset"]
-        test_data = problem["test_dataset"]
-        problem_uuid = problem["uuid"]
-        new_learnuplets = create_learnuplet(active_data, sz_batch, test_data,
-                                            problem_uuid, algo_uuid,
-                                            algo_uuid, 0)
-        api.mongo.db.learnuplet.insert_many(new_learnuplets)
-        return len(new_learnuplets)
-    except ValueError:
-        # not enough data to train the model
-        return 0
+    sz_batch = problem["size_train_dataset"]
+    test_data = problem["test_dataset"]
+    problem_uuid = problem["uuid"]
+    new_learnuplets = create_learnuplet(active_data, sz_batch, test_data,
+                                        problem_uuid, algo_uuid,
+                                        algo_uuid, 0)
+    api.mongo.db.learnuplet.insert_many(new_learnuplets)
+    return len(new_learnuplets)
 
 
 def data_learnuplet(problem_uuid, data_uuids):
@@ -128,7 +124,8 @@ def data_learnuplet(problem_uuid, data_uuids):
             last_rank = last_learnuplet["rank"]
             # TODO modify. Problem: what if pending models????
             last_model = last_learnuplet["model_end"]
-            new_learnuplets = create_learnuplet(data_uuids, sz_batch, test_data,
+            new_learnuplets = create_learnuplet(data_uuids, sz_batch,
+                                                test_data,
                                                 problem_uuid, uuid_algo,
                                                 last_model, last_rank + 1)
             api.mongo.db.learnuplet.insert_many(new_learnuplets)
