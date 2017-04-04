@@ -48,19 +48,19 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
         # for now we only generate random UUID....which has to be modified
         model_uuid_end = uuid.uuid4()
         if j == start_rank:
-            status = 'todo'
+            model_start = model_uuid_start
         else:
-            status = 'waiting'
+            model_start = ''
         new_learnuplet = {"uuid": uuid.uuid4(),
                           "problem": problem_uuid,
                           "algo": algo_uuid,
-                          "model_start": model_uuid_start,
+                          "model_start": model_start,
                           "model_end": model_uuid_end,
                           "train_data": train_data,
                           "test_data": test_data,
                           "worker": None,
                           "perf": None,
-                          "status": status,
+                          "status": 'todo',
                           'rank': j,
                           'timestamp_creation': int(time.time()),
                           'timestamp_done': None}
@@ -127,9 +127,6 @@ def data_learnuplet(problem_uuid, data_uuids):
                 sort=[("rank", -1)])
             last_rank = last_learnuplet["rank"]
             # TODO modify. Problem: what if pending models????
-            best_learnuplet = api.mongo.db.learnuplet.find_one(
-                {"rank": {"$exists": True}, "algo": uuid_algo},
-                sort=[("rank", -1)])
             last_model = last_learnuplet["model_end"]
             new_learnuplets = create_learnuplet(data_uuids, sz_batch, test_data,
                                                 problem_uuid, uuid_algo,
