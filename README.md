@@ -3,6 +3,8 @@ Provide tracability of learning and predictions.
 
 A RESTful API with Flask (and [Flask-PyMongo](https://flask-pymongo.readthedocs.io/en/latest/)) for the Orchestrator.
 
+Documentation (with endpoints specification) can be found [here!](https://morpheoorg.github.io/morpheo-orchestrator/)
+
 ## Getting started
 
 Requirements:
