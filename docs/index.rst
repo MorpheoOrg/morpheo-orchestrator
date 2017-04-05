@@ -3,17 +3,24 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to morpheo-orchestrator's documentation!
-================================================
+Morpheo-orchestrator
+====================
+
+The *Orchestrator* manages operations done of the Morpheo platform. 
+It is based on a public ledger which stores all operations, 
+such as data/algorithm registration, learning tasks, and prediction tasks.
+
+More details in the Wiki (TODO: add link)
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   modules/endpoints
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
