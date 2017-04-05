@@ -19,7 +19,7 @@ class Poster(db.document):
     tokens = db.IntegerField()
 
 
-class Model(db.document):
+class Algo(db.document):
     uuid = db.UUIDField()
     active = db.StringField(max_length=10)
     problem = db.UUIDField()

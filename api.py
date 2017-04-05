@@ -27,16 +27,19 @@ post_document = {
     'problem': ['uuid', 'workflow', 'test_dataset', 'size_train_dataset'],
     'algo': ['uuid', 'problem'],
     'data': ['uuid', 'problems'],
-    'prediction': ['data', 'problem']
 }
 # Existing collections
 list_collection = list(post_document.keys()) + ['learnuplet', 'preduplet']
-
+# Requirements for other post requests
+post_request = {'prediction': ['data', 'problem']}
 
 @app.route('/<collection_name>', methods=['GET'])
 def get_all_documents(collection_name):
     """
-    Get all the document corresponding to the collection_name.
+    - (*collection_name*) : **problem**, **algo**, **data**, **learnuplet**,
+    or **preduplet**
+
+    Get all the document corresponding to the (*collection_name*).
     """
     if collection_name in list_collection:
         collection = mongo.db[collection_name]
@@ -50,7 +53,20 @@ def get_all_documents(collection_name):
 @app.route('/<collection_name>', methods=['POST'])
 def add_document(collection_name):
     """
-    Add document to the collection whose name is collection_name.
+    Add document to the collection whose name is (*collection_name*):
+
+    ================  ==========================================================
+    Collection name   Data to post
+    ================  ==========================================================
+    *problem*         - *uuid* : problem UUID
+                      - *workflow* : workflow UUID
+                      - *test_dataset* : list of test data UUID
+                      - *size_train_dataset* : nb of train data per minibatch
+    *algo*            - *uuid* : algo UUID
+                      - *problem* : UUID of associated problem
+    *data*            - *uuid* : data UUID or list of data UUIDs
+                      - *problems* : UUID or list of UUID of associated problems
+    ================  ==========================================================
     """
     if collection_name in post_document.keys():
         n_learnuplets = 0
@@ -99,13 +115,16 @@ def add_document(collection_name):
 @app.route('/prediction', methods=['POST'])
 def request_prediction():
     """
-    Request a prediction on data for a given problem
-    User must post the list of data uuids and the problem uuid
+    Request a prediction on data for a given problem.
+
+    **Data to post**:
+        - *data* : list of UUID on which to apply the prediction
+        - *problem* : UUID of the associated problem
     """
     try:
         request_data = request.get_json()
         new_preduplet = {k: request_data[k]
-                         for k in post_document['prediction']}
+                         for k in post_request['prediction']}
         new_preduplet['timestamp_request'] = int(time.time())
         n_preduplet = tasks.create_preduplet(new_preduplet)
         if n_preduplet:
@@ -119,13 +138,14 @@ def request_prediction():
 @app.route('/worker/<uplet_type>/<uplet_uuid>', methods=['POST'])
 def set_uplet_worker(uplet_type, uplet_uuid):
     """
-    Update the worker and status of a learnuplet or preduplet
-    Mainly exposed to the Compute.
+    - (*uplet_type*) : **learnuplet** or **preduplet**
+    - (*uplet_uuid*) : **UUID** of the *learnuplet* or *preduplet*
 
-    :param uplet_type: 'learnuplet' or 'preduplet'
-    :param uplet_uuid: learnuplet uuid
-    :type uplet_type: string
-    :type uplet_uuid: UUID
+    Update the worker of a learnuplet or preduplet and change its status to
+    pending (only exposed to the Compute).
+
+    **Data to post**:
+        - *worker* : worker UUID
     """
     if uplet_type in ['learnuplet', 'preduplet']:
         try:
@@ -149,12 +169,16 @@ def set_uplet_worker(uplet_type, uplet_uuid):
 @app.route('/learndone/<learnuplet_uuid>', methods=['POST'])
 def report_perf_learnuplet(learnuplet_uuid):
     """
+    - (*learnuplet_uuid*) : **learnuplet UUID**
+
     Post output of learning, which updates the corresponding learnuplet.
     Modify the model_start of subequent learnuplet if performance increase.
     Only exposed to the Compute.
 
-    :param learnuplet_uuid: learnuplet uuid
-    :type learnuplet_uuid: UUID
+    **Data to post**:
+        - *perf* : performance of the trained model on all test data
+        - *train_perf* : list of performances (one for each train data file)
+        - *test_perf* : list of performances (one for each test data file)
     """
     # TODO: check identity of worker
     try:
@@ -191,10 +215,13 @@ def report_perf_learnuplet(learnuplet_uuid):
 @app.route('/preddone/<preduplet_uuid>', methods=['POST'])
 def update_preduplet(preduplet_uuid):
     """
-    Update status of a preduplet
+    - (*preduplet_uuid*) : **preduplet UUID**
 
-    :param preduplet_uuid: learnuplet uuid
-    :type preduplet_uuid: UUID
+    Update status of a preduplet.
+    Only exposed to the Compute.
+
+    **Data to post**:
+        - *status* : status of the prediction task: *done* or *failed*
     """
     try:
         request_data = request.get_json()
