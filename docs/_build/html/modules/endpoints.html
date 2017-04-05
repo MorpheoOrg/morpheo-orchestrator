@@ -63,8 +63,8 @@
 <dt id="post--worker-(uplet_type)-(uplet_uuid)">
 <code class="descname">POST </code><code class="descname">/worker/</code><span class="sig-paren">(</span><em>uplet_type</em><span class="sig-paren">)</span><code class="descname">/</code><span class="sig-paren">(</span><em>uplet_uuid</em><span class="sig-paren">)</span><a class="headerlink" href="#post--worker-(uplet_type)-(uplet_uuid)" title="Permalink to this definition">¶</a></dt>
 <dd><ul class="simple">
-<li>(<em>uplet_type</em>): <strong>learnuplet</strong> or <strong>preduplet</strong></li>
-<li>(<em>uplet_uuid</em>): <strong>UUID</strong> of the <em>learnuplet</em> or <em>preduplet</em></li>
+<li>(<em>uplet_type</em>) : <strong>learnuplet</strong> or <strong>preduplet</strong></li>
+<li>(<em>uplet_uuid</em>) : <strong>UUID</strong> of the <em>learnuplet</em> or <em>preduplet</em></li>
 </ul>
 <p>Update the worker of a learnuplet or preduplet and change its status to
 pending (only exposed to the Compute).</p>
@@ -81,7 +81,7 @@ pending (only exposed to the Compute).</p>
 <dt id="post--learndone-(learnuplet_uuid)">
 <code class="descname">POST </code><code class="descname">/learndone/</code><span class="sig-paren">(</span><em>learnuplet_uuid</em><span class="sig-paren">)</span><a class="headerlink" href="#post--learndone-(learnuplet_uuid)" title="Permalink to this definition">¶</a></dt>
 <dd><ul class="simple">
-<li>(<em>learnuplet_uuid</em>): <strong>learnuplet UUID</strong></li>
+<li>(<em>learnuplet_uuid</em>) : <strong>learnuplet UUID</strong></li>
 </ul>
 <p>Post output of learning, which updates the corresponding learnuplet.
 Modify the model_start of subequent learnuplet if performance increase.
@@ -101,7 +101,7 @@ Only exposed to the Compute.</p>
 <dt id="post--preddone-(preduplet_uuid)">
 <code class="descname">POST </code><code class="descname">/preddone/</code><span class="sig-paren">(</span><em>preduplet_uuid</em><span class="sig-paren">)</span><a class="headerlink" href="#post--preddone-(preduplet_uuid)" title="Permalink to this definition">¶</a></dt>
 <dd><ul class="simple">
-<li>(<em>preduplet_uuid</em>): <strong>preduplet UUID</strong></li>
+<li>(<em>preduplet_uuid</em>) : <strong>preduplet UUID</strong></li>
 </ul>
 <p>Update status of a preduplet.
 Only exposed to the Compute.</p>
@@ -118,9 +118,9 @@ Only exposed to the Compute.</p>
 <dt id="get--(collection_name)">
 <code class="descname">GET </code><code class="descname">/</code><span class="sig-paren">(</span><em>collection_name</em><span class="sig-paren">)</span><a class="headerlink" href="#get--(collection_name)" title="Permalink to this definition">¶</a></dt>
 <dd><ul class="simple">
-<li>(<em>collection_name</em>) : <strong>problem</strong> or <strong>algo</strong> or <strong>data</strong> or</li>
+<li>(<em>collection_name</em>) : <strong>problem</strong>, <strong>algo</strong>, <strong>data</strong>, <strong>learnuplet</strong>,</li>
 </ul>
-<p><strong>learnuplet</strong> or <strong>preduplet</strong></p>
+<p>or <strong>preduplet</strong></p>
 <p>Get all the document corresponding to the (<em>collection_name</em>).</p>
 </dd></dl>
 
