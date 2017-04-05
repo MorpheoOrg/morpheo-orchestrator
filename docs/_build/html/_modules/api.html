@@ -1,0 +1,309 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>api &#8212; morpheo-orchestrator 0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for api</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="k">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">jsonify</span><span class="p">,</span> <span class="n">request</span>
+<span class="kn">from</span> <span class="nn">flask_pymongo</span> <span class="k">import</span> <span class="n">PyMongo</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">tasks</span>
+
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Link to prod db or create dummy db for tests</span>
+<span class="c1"># Check the environment variable TESTING</span>
+<span class="n">testing</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;TESTING&#39;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">testing</span> <span class="o">==</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span>
+    <span class="c1"># link to (actually create) dummy db (destroyed at the end of tests)</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;MONGO_DBNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;test_orchestrator&#39;</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;TESTING&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># link to prod db</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;MONGO_DBNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;orchestrator&#39;</span>
+<span class="n">mongo</span> <span class="o">=</span> <span class="n">PyMongo</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+
+
+<span class="c1"># Document fields to be added</span>
+<span class="c1"># data: uuid can be one element or a list, in this case all element have same</span>
+<span class="c1"># problems</span>
+<span class="n">post_document</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;problem&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">,</span> <span class="s1">&#39;workflow&#39;</span><span class="p">,</span> <span class="s1">&#39;test_dataset&#39;</span><span class="p">,</span> <span class="s1">&#39;size_train_dataset&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;algo&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">,</span> <span class="s1">&#39;problem&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">,</span> <span class="s1">&#39;problems&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;prediction&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;problem&#39;</span><span class="p">]</span>
+<span class="p">}</span>
+<span class="c1"># Existing collections</span>
+<span class="n">list_collection</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">post_document</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;learnuplet&#39;</span><span class="p">,</span> <span class="s1">&#39;preduplet&#39;</span><span class="p">]</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/&lt;collection_name&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<div class="viewcode-block" id="get_all_documents"><a class="viewcode-back" href="../modules/endpoints.html#api.get_all_documents">[docs]</a><span class="k">def</span> <span class="nf">get_all_documents</span><span class="p">(</span><span class="n">collection_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get all the document corresponding to the collection_name.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">collection_name</span> <span class="ow">in</span> <span class="n">list_collection</span><span class="p">:</span>
+        <span class="n">collection</span> <span class="o">=</span> <span class="n">mongo</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="n">collection_name</span><span class="p">]</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">[{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;_id&#39;</span><span class="p">}</span>
+                  <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">collection</span><span class="o">.</span><span class="n">find</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">s&#39;</span> <span class="o">%</span> <span class="n">collection_name</span><span class="p">:</span> <span class="n">output</span><span class="p">}),</span> <span class="mi">200</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;Page does not exist&#39;</span><span class="p">}),</span> <span class="mi">404</span></div>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/&lt;collection_name&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<div class="viewcode-block" id="add_document"><a class="viewcode-back" href="../modules/endpoints.html#api.add_document">[docs]</a><span class="k">def</span> <span class="nf">add_document</span><span class="p">(</span><span class="n">collection_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add document to the collection whose name is collection_name.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">collection_name</span> <span class="ow">in</span> <span class="n">post_document</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">n_learnuplets</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">collection</span> <span class="o">=</span> <span class="n">mongo</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="n">collection_name</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">request_data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+            <span class="n">timestamp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+            <span class="c1"># TODO: validation on fields + check element does not exist</span>
+            <span class="c1"># TODO: check element exists on Storage</span>
+            <span class="c1"># if upload of multiple elements</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">request_data</span><span class="p">[</span><span class="s2">&quot;uuid&quot;</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+                <span class="n">new_docs</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">uuid</span> <span class="ow">in</span> <span class="n">request_data</span><span class="p">[</span><span class="s2">&quot;uuid&quot;</span><span class="p">]:</span>
+                    <span class="n">new_doc</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">request_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>
+                               <span class="n">post_document</span><span class="p">[</span><span class="n">collection_name</span><span class="p">]</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;uuid&quot;</span><span class="p">}</span>
+                    <span class="n">new_doc</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">uuid</span>
+                    <span class="n">new_doc</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timestamp</span>
+                    <span class="n">new_docs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_doc</span><span class="p">)</span>
+            <span class="c1"># if upload of one element</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">new_doc</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">request_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                           <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">post_document</span><span class="p">[</span><span class="n">collection_name</span><span class="p">]}</span>
+                <span class="n">new_doc</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">timestamp</span>
+                <span class="n">new_docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">new_doc</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong key in posted data&#39;</span><span class="p">}),</span> <span class="mi">400</span>
+        <span class="c1"># put docs in db</span>
+        <span class="n">inserted_ids</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">insert_many</span><span class="p">(</span><span class="n">new_docs</span><span class="p">)</span><span class="o">.</span><span class="n">inserted_ids</span>
+        <span class="c1"># returns the documents uuids and create learnuplets</span>
+        <span class="c1"># find back created document(s)</span>
+        <span class="n">uuid_new_docs</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">find</span><span class="p">({</span><span class="s1">&#39;_id&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;$in&quot;</span><span class="p">:</span> <span class="n">inserted_ids</span><span class="p">}})</span><span class="o">.</span>\
+            <span class="n">distinct</span><span class="p">(</span><span class="s2">&quot;uuid&quot;</span><span class="p">)</span>
+        <span class="c1"># create learnuplets</span>
+        <span class="k">if</span> <span class="n">collection_name</span> <span class="o">==</span> <span class="s1">&#39;algo&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">uuid_new_doc</span> <span class="ow">in</span> <span class="n">uuid_new_docs</span><span class="p">:</span>
+                <span class="n">n_learnuplets</span> <span class="o">+=</span> <span class="n">tasks</span><span class="o">.</span><span class="n">algo_learnuplet</span><span class="p">(</span><span class="n">uuid_new_doc</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">collection_name</span> <span class="o">==</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">pb_uuid</span> <span class="ow">in</span> <span class="n">request_data</span><span class="p">[</span><span class="s2">&quot;problems&quot;</span><span class="p">]:</span>
+                <span class="n">n_learnuplets</span> <span class="o">+=</span> <span class="n">tasks</span><span class="o">.</span><span class="n">data_learnuplet</span><span class="p">(</span><span class="n">pb_uuid</span><span class="p">,</span> <span class="n">uuid_new_docs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;uuid_new_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">collection_name</span><span class="p">:</span> <span class="n">uuid_new_docs</span><span class="p">,</span>
+                        <span class="s1">&#39;new_learnuplets&#39;</span><span class="p">:</span> <span class="n">n_learnuplets</span><span class="p">}),</span> <span class="mi">201</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;Page does not exist&#39;</span><span class="p">}),</span> <span class="mi">404</span></div>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/prediction&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<div class="viewcode-block" id="request_prediction"><a class="viewcode-back" href="../modules/endpoints.html#api.request_prediction">[docs]</a><span class="k">def</span> <span class="nf">request_prediction</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Request a prediction on data for a given problem</span>
+<span class="sd">    User must post the list of data uuids and the problem uuid</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">request_data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+        <span class="n">new_preduplet</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">request_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">post_document</span><span class="p">[</span><span class="s1">&#39;prediction&#39;</span><span class="p">]}</span>
+        <span class="n">new_preduplet</span><span class="p">[</span><span class="s1">&#39;timestamp_request&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+        <span class="n">n_preduplet</span> <span class="o">=</span> <span class="n">tasks</span><span class="o">.</span><span class="n">create_preduplet</span><span class="p">(</span><span class="n">new_preduplet</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_preduplet</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;new_preduplets&#39;</span><span class="p">:</span> <span class="n">n_preduplet</span><span class="p">}),</span> <span class="mi">201</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;no problem or trained model&#39;</span><span class="p">}),</span> <span class="mi">400</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong key in posted data&#39;</span><span class="p">}),</span> <span class="mi">400</span></div>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/worker/&lt;uplet_type&gt;/&lt;uplet_uuid&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<div class="viewcode-block" id="set_uplet_worker"><a class="viewcode-back" href="../modules/endpoints.html#api.set_uplet_worker">[docs]</a><span class="k">def</span> <span class="nf">set_uplet_worker</span><span class="p">(</span><span class="n">uplet_type</span><span class="p">,</span> <span class="n">uplet_uuid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update the worker and status of a learnuplet or preduplet</span>
+<span class="sd">    Mainly exposed to the Compute.</span>
+
+<span class="sd">    :param uplet_type: &#39;learnuplet&#39; or &#39;preduplet&#39;</span>
+<span class="sd">    :param uplet_uuid: learnuplet uuid</span>
+<span class="sd">    :type uplet_type: string</span>
+<span class="sd">    :type uplet_uuid: UUID</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">uplet_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;learnuplet&#39;</span><span class="p">,</span> <span class="s1">&#39;preduplet&#39;</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">collection</span> <span class="o">=</span> <span class="n">mongo</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="n">uplet_type</span><span class="p">]</span>
+            <span class="n">request_data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+            <span class="n">updated</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">update_one</span><span class="p">(</span>
+                <span class="p">{</span><span class="s1">&#39;uuid&#39;</span><span class="p">:</span> <span class="n">uplet_uuid</span><span class="p">},</span>
+                <span class="p">{</span><span class="s1">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;pending&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;worker&#39;</span><span class="p">:</span> <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;worker&#39;</span><span class="p">]}})</span>
+            <span class="k">if</span> <span class="n">updated</span><span class="o">.</span><span class="n">modified_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_worker_set&#39;</span> <span class="o">%</span> <span class="n">uplet_type</span><span class="p">:</span> <span class="n">uplet_uuid</span><span class="p">}),</span> <span class="mi">200</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;no worker set for </span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                                <span class="p">(</span><span class="n">uplet_type</span><span class="p">,</span> <span class="n">uplet_uuid</span><span class="p">)}),</span> <span class="mi">400</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong key in posted data&#39;</span><span class="p">}),</span> <span class="mi">400</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;Page does not exist&#39;</span><span class="p">}),</span> <span class="mi">404</span></div>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/learndone/&lt;learnuplet_uuid&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<div class="viewcode-block" id="report_perf_learnuplet"><a class="viewcode-back" href="../modules/endpoints.html#api.report_perf_learnuplet">[docs]</a><span class="k">def</span> <span class="nf">report_perf_learnuplet</span><span class="p">(</span><span class="n">learnuplet_uuid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Post output of learning, which updates the corresponding learnuplet.</span>
+<span class="sd">    Modify the model_start of subequent learnuplet if performance increase.</span>
+<span class="sd">    Only exposed to the Compute.</span>
+
+<span class="sd">    :param learnuplet_uuid: learnuplet uuid</span>
+<span class="sd">    :type learnuplet_uuid: UUID</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: check identity of worker</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">request_data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+        <span class="c1"># update performance in current learnuplet</span>
+        <span class="n">updated_perf</span> <span class="o">=</span> <span class="n">mongo</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">learnuplet</span><span class="o">.</span><span class="n">update_one</span><span class="p">(</span>
+            <span class="p">{</span><span class="s1">&#39;uuid&#39;</span><span class="p">:</span> <span class="n">learnuplet_uuid</span><span class="p">},</span>
+            <span class="p">{</span><span class="s1">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;done&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;perf&#39;</span><span class="p">:</span> <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;perf&#39;</span><span class="p">],</span>
+                      <span class="s1">&#39;train_perf&#39;</span><span class="p">:</span> <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;train_perf&#39;</span><span class="p">],</span>
+                      <span class="s1">&#39;test_perf&#39;</span><span class="p">:</span> <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;test_perf&#39;</span><span class="p">]}})</span>
+        <span class="k">if</span> <span class="n">updated_perf</span><span class="o">.</span><span class="n">modified_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">learnuplet_perf</span> <span class="o">=</span> <span class="n">mongo</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">learnuplet</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span>
+                <span class="p">{</span><span class="s1">&#39;uuid&#39;</span><span class="p">:</span> <span class="n">learnuplet_uuid</span><span class="p">})</span>
+            <span class="c1"># find learnuplet with best performance</span>
+            <span class="n">best_learnuplet</span> <span class="o">=</span> <span class="n">mongo</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">learnuplet</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">&quot;perf&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;$exists&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="s2">&quot;algo&quot;</span><span class="p">:</span> <span class="n">learnuplet_perf</span><span class="p">[</span><span class="s1">&#39;algo&#39;</span><span class="p">]},</span>
+                <span class="n">sort</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;perf&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)])</span>
+            <span class="c1"># change model start in next learnuplet</span>
+            <span class="n">next_model_start</span> <span class="o">=</span> <span class="n">best_learnuplet</span><span class="p">[</span><span class="s1">&#39;model_end&#39;</span><span class="p">]</span>
+            <span class="n">mongo</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">learnuplet</span><span class="o">.</span><span class="n">update_one</span><span class="p">(</span>
+                <span class="p">{</span><span class="s1">&#39;rank&#39;</span><span class="p">:</span> <span class="n">learnuplet_perf</span><span class="p">[</span><span class="s1">&#39;rank&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                 <span class="s1">&#39;algo&#39;</span><span class="p">:</span> <span class="n">learnuplet_perf</span><span class="p">[</span><span class="s1">&#39;algo&#39;</span><span class="p">]},</span>
+                <span class="p">{</span><span class="s1">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;model_start&#39;</span><span class="p">:</span> <span class="n">next_model_start</span><span class="p">}})</span>
+            <span class="c1"># return updated learnupets</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;updated_learnuplet&#39;</span><span class="p">:</span> <span class="n">learnuplet_uuid</span><span class="p">}),</span> <span class="mi">200</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span>
+                <span class="p">{</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;no update of learnuplet </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">learnuplet_uuid</span><span class="p">}),</span> <span class="mi">400</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong key in posted data&#39;</span><span class="p">}),</span> <span class="mi">400</span></div>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/preddone/&lt;preduplet_uuid&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<div class="viewcode-block" id="update_preduplet"><a class="viewcode-back" href="../modules/endpoints.html#api.update_preduplet">[docs]</a><span class="k">def</span> <span class="nf">update_preduplet</span><span class="p">(</span><span class="n">preduplet_uuid</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update status of a preduplet</span>
+
+<span class="sd">    :param preduplet_uuid: learnuplet uuid</span>
+<span class="sd">    :type preduplet_uuid: UUID</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">request_data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+        <span class="n">updated</span> <span class="o">=</span> <span class="n">mongo</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">preduplet</span><span class="o">.</span><span class="n">update_one</span><span class="p">(</span>
+            <span class="p">{</span><span class="s1">&#39;uuid&#39;</span><span class="p">:</span> <span class="n">preduplet_uuid</span><span class="p">},</span>
+            <span class="p">{</span><span class="s1">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="n">request_data</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">],</span>
+                      <span class="s1">&#39;timestamp_done&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())}})</span>
+        <span class="k">if</span> <span class="n">updated</span><span class="o">.</span><span class="n">modified_count</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;updated_preduplet&#39;</span><span class="p">:</span> <span class="n">preduplet_uuid</span><span class="p">}),</span> <span class="mi">200</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span>
+                <span class="p">{</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;no update of preduplet </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">preduplet_uuid</span><span class="p">}),</span> <span class="mi">400</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s1">&#39;Error&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong key in posted data&#39;</span><span class="p">}),</span> <span class="mi">400</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules/endpoints.html">API endpoints</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Mathieu Galtier, Camille Marini.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

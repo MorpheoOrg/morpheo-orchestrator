@@ -1,0 +1,227 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>API endpoints &#8212; morpheo-orchestrator 0.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Morpheo-orchestrator" href="../index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="api-endpoints">
+<h1>API endpoints<a class="headerlink" href="#api-endpoints" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="endpoints"></span><dl class="post">
+<dt id="post--prediction">
+<code class="descname">POST </code><code class="descname">/prediction</code><a class="headerlink" href="#post--prediction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request a prediction on data for a given problem.</p>
+<dl class="docutils">
+<dt><strong>Data to post</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>data</em> : list of UUID on which to apply the prediction</li>
+<li><em>problem</em> : UUID of the associated problem</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--worker-(uplet_type)-(uplet_uuid)">
+<code class="descname">POST </code><code class="descname">/worker/</code><span class="sig-paren">(</span><em>uplet_type</em><span class="sig-paren">)</span><code class="descname">/</code><span class="sig-paren">(</span><em>uplet_uuid</em><span class="sig-paren">)</span><a class="headerlink" href="#post--worker-(uplet_type)-(uplet_uuid)" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li>(<em>uplet_type</em>): <strong>learnuplet</strong> or <strong>preduplet</strong></li>
+<li>(<em>uplet_uuid</em>): <strong>UUID</strong> of the <em>learnuplet</em> or <em>preduplet</em></li>
+</ul>
+<p>Update the worker of a learnuplet or preduplet and change its status to
+pending (only exposed to the Compute).</p>
+<dl class="docutils">
+<dt><strong>Data to post</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>worker</em> : worker UUID</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--learndone-(learnuplet_uuid)">
+<code class="descname">POST </code><code class="descname">/learndone/</code><span class="sig-paren">(</span><em>learnuplet_uuid</em><span class="sig-paren">)</span><a class="headerlink" href="#post--learndone-(learnuplet_uuid)" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li>(<em>learnuplet_uuid</em>): <strong>learnuplet UUID</strong></li>
+</ul>
+<p>Post output of learning, which updates the corresponding learnuplet.
+Modify the model_start of subequent learnuplet if performance increase.
+Only exposed to the Compute.</p>
+<dl class="docutils">
+<dt><strong>Data to post</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>perf</em> : performance of the trained model on all test data</li>
+<li><em>train_perf</em> : list of performances (one for each train data file)</li>
+<li><em>test_perf</em> : list of performances (one for each test data file)</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--preddone-(preduplet_uuid)">
+<code class="descname">POST </code><code class="descname">/preddone/</code><span class="sig-paren">(</span><em>preduplet_uuid</em><span class="sig-paren">)</span><a class="headerlink" href="#post--preddone-(preduplet_uuid)" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li>(<em>preduplet_uuid</em>): <strong>preduplet UUID</strong></li>
+</ul>
+<p>Update status of a preduplet.
+Only exposed to the Compute.</p>
+<dl class="docutils">
+<dt><strong>Data to post</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>status</em> : status of the prediction task: <em>done</em> or <em>failed</em></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="get">
+<dt id="get--(collection_name)">
+<code class="descname">GET </code><code class="descname">/</code><span class="sig-paren">(</span><em>collection_name</em><span class="sig-paren">)</span><a class="headerlink" href="#get--(collection_name)" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li>(<em>collection_name</em>) : <strong>problem</strong> or <strong>algo</strong> or <strong>data</strong> or</li>
+</ul>
+<p><strong>learnuplet</strong> or <strong>preduplet</strong></p>
+<p>Get all the document corresponding to the (<em>collection_name</em>).</p>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--(collection_name)">
+<code class="descname">POST </code><code class="descname">/</code><span class="sig-paren">(</span><em>collection_name</em><span class="sig-paren">)</span><a class="headerlink" href="#post--(collection_name)" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add document to the collection whose name is (<em>collection_name</em>):</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="22%" />
+<col width="78%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Collection name</th>
+<th class="head">Data to post</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><em>problem</em></td>
+<td><ul class="first last simple">
+<li><em>uuid</em> : problem UUID</li>
+<li><em>workflow</em> : workflow UUID</li>
+<li><em>test_dataset</em> : list of test data UUID</li>
+<li><em>size_train_dataset</em> : nb of train data per minibatch</li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td><em>algo</em></td>
+<td><ul class="first last simple">
+<li><em>uuid</em> : algo UUID</li>
+<li><em>problem</em> : UUID of associated problem</li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><em>data</em></td>
+<td><ul class="first last simple">
+<li><em>uuid</em> : data UUID or list of data UUIDs</li>
+<li><em>problems</em> : UUID or list of UUID of associated problems</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API endpoints</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../index.html" title="previous chapter">Morpheo-orchestrator</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/modules/endpoints.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Mathieu Galtier, Camille Marini.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/modules/endpoints.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
