@@ -50,6 +50,27 @@ def get_all_documents(collection_name):
         return jsonify({'Error': 'Page does not exist'}), 404
 
 
+@app.route('/<collection_name>/<collection_filter>', methods=['GET'])
+def get_filtered_document(collection_name, collection_filter):
+    """
+    - (*collection_name*) : **problem**, **algo**, **data**, **learnuplet**,
+    or **preduplet**
+    - (*collection_filter*): TODO
+
+    Get document from (*collection_name*) corresponding to filter\
+        (*collection_filter*).
+    """
+    if collection_name in list_collection:
+        filter_key = collection_filter.split('=')[0]
+        filter_value = collection_filter.split('=')[1]
+        collection = mongo.db[collection_name]
+        output = [{k: v for k, v in d.items() if k != '_id'}
+                  for d in collection.find({filter_key: filter_value})]
+        return jsonify({'%ss' % collection_name: output}), 200
+    else:
+        return jsonify({'Error': 'Page does not exist'}), 404
+
+
 @app.route('/<collection_name>', methods=['POST'])
 def add_document(collection_name):
     """
