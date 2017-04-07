@@ -10,7 +10,7 @@ The *Orchestrator* manages operations done of the Morpheo platform.
 It is based on a public ledger which stores all operations, 
 such as data/algorithm registration, learning tasks, and prediction tasks.
 
-More details in the Wiki (TODO: add link)
+More details in the Morpheo `global documentation`_.
 
 .. toctree::
    :maxdepth: 2
@@ -25,3 +25,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. _`global documentation`: https://morpheoorg.github.io/morpheo/
