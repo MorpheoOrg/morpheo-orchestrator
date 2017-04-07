@@ -55,7 +55,7 @@ def get_filtered_document(collection_name, collection_filter):
     """
     - (*collection_name*) : **problem**, **algo**, **data**, **learnuplet**,
     or **preduplet**
-    - (*collection_filter*): TODO
+    - (*collection_filter*): **filter_key=value**
 
     Get document from (*collection_name*) corresponding to filter\
         (*collection_filter*).
