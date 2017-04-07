@@ -53,8 +53,8 @@ def get_all_documents(collection_name):
 @app.route('/<collection_name>/<collection_filter>', methods=['GET'])
 def get_filtered_document(collection_name, collection_filter):
     """
-    - (*collection_name*) : **problem**, **algo**, **data**, **learnuplet**,
-    or **preduplet**
+    - (*collection_name*) : **problem**, **algo**, **data**, **learnuplet**,\
+        or **preduplet**
     - (*collection_filter*): **filter_key=value**
 
     Get document from (*collection_name*) corresponding to filter\
