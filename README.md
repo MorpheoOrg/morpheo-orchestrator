@@ -44,3 +44,7 @@ Run
 `coverage run test_api.py`  
 `coverage report -m api.py`  
 Without `-m api.py` the coverage report goes to irrelevant depth. We can specify the files to be reported on with `-m file1 file2 ...`
+
+## TODO
+
+:warning: flask cors need to be disabled in prod
