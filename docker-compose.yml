@@ -11,6 +11,7 @@ services:
     command: python3 /app/app.py
     environment:
       - MONGO_HOST=mongodb
+      - CORS=True
   mongodb:
     image: mongo:3.4
     volumes:

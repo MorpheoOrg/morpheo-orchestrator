@@ -1,13 +1,15 @@
 import os
 from flask import Flask, jsonify, request
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from flask_pymongo import PyMongo
 import time
 import tasks
 
 
 app = Flask(__name__)
-CORS(app)
+
+if os.environ.get('CORS'):
+    CORS(app)
 
 # Link to prod db or create dummy db for tests
 # Check the environment variable TESTING

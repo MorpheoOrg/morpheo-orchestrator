@@ -23,6 +23,8 @@ setvirtualenvproject
 pip install -r requirements.txt
 ```
 
+Note: If you want to enable CORS, set the environment variable: `CORS=True`
+
 ## Usage
 
 Start MongoDB:  
@@ -36,6 +38,18 @@ Launch the app: `python api.py`
 Interact with the api:
 - GET example: `curl http://127.0.0.1:5000/problem` 
 - POST example: `curl http://127.0.0.1:5000/problem -d '{"uuid": "fc896fb1", "workflow": "ac432fx9"}' -X POST -H "Content-type: application/json"`
+
+## Run the app using Docker Compose
+
+Requirements:  
+- [docker](https://docs.docker.com/) 
+- [docker-compose](https://docs.docker.com/compose/) 1.11.2
+
+To build and run the service:
+```
+docker-compose build
+docker-compose up
+```
 
 ## Coverage
 We use [coverage.py](http://coverage.readthedocs.io/en/latest/index.html).
