@@ -2,3 +2,5 @@
 *.DS_*
 __pycache__
 .coverage
+.idea
+data
