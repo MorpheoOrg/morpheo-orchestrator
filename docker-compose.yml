@@ -4,12 +4,16 @@ services:
     build: .
     volumes:
       - ./app:/app
-    depends_on:
+    links:
       - mongodb
     ports:
       - "5000:5000"
     command: python3 /app/app.py
+    environment:
+      - MONGO_HOST=mongodb
   mongodb:
     image: mongo:3.4
     volumes:
       - ./data:/data/db
+    ports:
+      - "27017:27017"

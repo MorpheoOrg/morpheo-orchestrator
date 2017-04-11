@@ -19,6 +19,8 @@ if testing == "T":
 else:
     # link to prod db
     app.config['MONGO_DBNAME'] = 'orchestrator'
+mongo_host = os.environ.get('MONGO_HOST', "localhost")
+app.config['MONGO_HOST'] = mongo_host
 mongo = PyMongo(app)
 
 
