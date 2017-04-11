@@ -17,7 +17,7 @@ Make sure Python3 and MongoDB are installed.
 Clone the repository, create a virtual environment with Python3, and instal pip packages:
 ```
 git clone https://github.com/DeepSeeOrg/orchestrator.git
-cd orchestrator
+cd orchestrator/app
 mkvirtualenv --python=/usr/bin/python3 orchestrator
 setvirtualenvproject
 pip install -r requirements.txt
