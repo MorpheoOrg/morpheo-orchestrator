@@ -11,7 +11,6 @@ RUN apk add --no-cache libstdc++ && \
     ln -s locale.h /usr/include/xlocale.h
 
 ADD ./requirements.txt .
-RUN echo ls *
 RUN pip install -r requirements.txt
 
 EXPOSE 5000
