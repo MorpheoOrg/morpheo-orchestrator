@@ -10,6 +10,8 @@ click==6.7
 coverage==4.3.4
 docutils==0.13.1
 flask-cors==3.0.2
+gevent==1.2.1
+gunicorn==19.7.1
 imagesize==0.7.1
 itsdangerous==0.24
 Jinja2==2.9.5
