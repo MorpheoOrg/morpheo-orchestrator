@@ -11,6 +11,7 @@ RUN apk add --no-cache libstdc++ && \
     ln -s locale.h /usr/include/xlocale.h
 
 ADD ./requirements.txt .
+ADD ./app .
 RUN pip install -r requirements.txt
 
 RUN apk del .build-dependencies
