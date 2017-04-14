@@ -8,7 +8,6 @@ services:
       - mongodb
     ports:
       - "5000:5000"
-    command: python3 /app/app.py
     environment:
       - MONGO_HOST=mongodb
       - CORS=True

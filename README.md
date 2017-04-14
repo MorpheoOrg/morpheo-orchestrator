@@ -48,8 +48,7 @@ Requirements:
 
 To build and run the service:
 ```
-docker-compose build
-docker-compose up
+docker-compose up --build
 ```
 
 ## Coverage

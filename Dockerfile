@@ -1,4 +1,4 @@
-FROM frolvlad/alpine-python3
+FROM python:3-alpine
 
 RUN apk add --no-cache libstdc++ && \
     apk add --no-cache \
@@ -13,6 +13,8 @@ RUN apk add --no-cache libstdc++ && \
 ADD ./requirements.txt .
 RUN pip install -r requirements.txt
 
+RUN apk del .build-dependencies
+
 EXPOSE 5000
 
-ENTRYPOINT ["python3" , "/app/api.py"]
+CMD ["python3" , "/app/api.py"]
