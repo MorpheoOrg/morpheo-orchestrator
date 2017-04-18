@@ -10,10 +10,10 @@ RUN apk add --no-cache libstdc++ && \
     python3-dev && \
     ln -s locale.h /usr/include/xlocale.h
 
-COPY ./requirements.txt /
-COPY ./app /app
-WORKDIR /app
-RUN pip install -r /requirements.txt
+COPY ./requirements.txt /usr/src/.
+COPY ./app /usr/src/app
+WORKDIR /usr/src/app
+RUN pip install -r /usr/src/requirements.txt
 
 RUN apk del .build-dependencies
 
