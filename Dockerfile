@@ -10,12 +10,13 @@ RUN apk add --no-cache libstdc++ && \
     python3-dev && \
     ln -s locale.h /usr/include/xlocale.h
 
-ADD ./requirements.txt .
-ADD ./app .
-RUN pip install -r requirements.txt
+COPY ./requirements.txt /
+COPY ./app /app
+WORKDIR /app
+RUN pip install -r /requirements.txt
 
 RUN apk del .build-dependencies
 
 EXPOSE 5000
 
-CMD ["python3" , "/app/api.py"]
+CMD ["python3", "api.py"]
