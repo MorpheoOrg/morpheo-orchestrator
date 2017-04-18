@@ -44,9 +44,11 @@ For now, they are constructed following these steps:
 1. selection of associated `active data`: for now all data corresponding to the same problem with targets.  
 This might change later to lower computational costs.  
 2. for each mini-batch containing `size_train_dataset` (parameter fixed for the `problem`), creation of a learnuplet.   
-The first learnuplet has `rank=0` and `status=todo`, and other have incremental values of `rank` and `status=waiting`. 
-Each learnuplet contains the UUID of the model from which to start the training and UUID where to save the model after training.   
-Model from which to start the learning is not defined for learnuplets with `status=waiting` (and `rank=i`) at learnuplet creation, but when `performance` of `learnuplet` with `rank=i-1` is registered on the `Orchestrator`. At this moment, the `Orchestrator` looks for the `model_end` of the `learnuplet` with the best performance to choose it as the `model_start` for learnuplet of `rank=i`, which `status` is now `todo`.
+Each learnuplet contains the UUID of the model from which to start the training in `model_start`and UUID where to save the model after training in `model_end`.   
+The first learnuplet has `rank=0`, `status=todo` and a specified `model_start`
+, and other have incremental values of `rank`, `status=todo` and nothing in `model_start` (filled later). 
++Model from which to start the learning is not defined for learnuplets with `rank=i` at learnuplet creation, but when `performance` of `learnuplet` with `rank=i-1` is registered on the `Orchestrator`. At this moment, the `Orchestrator` looks for the `model_end` of the `learnuplet` with the best performance to choose it as the `model_start` for learnuplet of `rank=i`.
+
 
 #### <a name="learnuplet_construction_data"></a> Details on the construction of a learnuplet at data upload
 
