@@ -16,14 +16,8 @@ More details in the Morpheo `global documentation`_.
    :maxdepth: 2
    :caption: Contents:
 
+   modules/collections
    modules/endpoints
 
-
-Indices and tables
-------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
 .. _`global documentation`: https://morpheoorg.github.io/morpheo/
