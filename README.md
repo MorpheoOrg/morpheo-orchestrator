@@ -17,11 +17,13 @@ Make sure Python3 and MongoDB are installed.
 Clone the repository, create a virtual environment with Python3, and instal pip packages:
 ```
 git clone https://github.com/DeepSeeOrg/orchestrator.git
-cd orchestrator
+cd orchestrator/app
 mkvirtualenv --python=/usr/bin/python3 orchestrator
 setvirtualenvproject
 pip install -r requirements.txt
 ```
+
+Note: If you want to enable CORS, set the environment variable: `CORS=True`
 
 ## Usage
 
@@ -31,11 +33,23 @@ on Linux it is done automatically but you can force it with
 on OSX  
 `mongod`
 
-Launch the app: `python api.py`
+Launch the app: `python api.py`  
+To launch the app with gunicorn: `gunicorn --config gunicorn_config.py api:app`
 
 Interact with the api:
-- GET example: `curl http://127.0.0.1:5000/problem` 
-- POST example: `curl http://127.0.0.1:5000/problem -d '{"uuid": "fc896fb1", "workflow": "ac432fx9"}' -X POST -H "Content-type: application/json"`
+- GET example: `curl http://0.0.0.0:5000/problem` 
+- POST example: `curl http://0.0.0.0:5000/problem -d '{"uuid": "fc896fb1", "workflow": "ac432fx9"}' -X POST -H "Content-type: application/json"`
+
+## Run the app using Docker Compose
+
+Requirements:  
+- [docker](https://docs.docker.com/) 
+- [docker-compose](https://docs.docker.com/compose/) 1.11.2
+
+To build and run the service:
+```
+docker-compose up --build
+```
 
 ## Coverage
 We use [coverage.py](http://coverage.readthedocs.io/en/latest/index.html).
@@ -47,4 +61,4 @@ Without `-m api.py` the coverage report goes to irrelevant depth. We can specify
 
 ## TODO
 
-:warning: flask cors need to be disabled in prod
+- [ ] Check deployment with kubernetes  
