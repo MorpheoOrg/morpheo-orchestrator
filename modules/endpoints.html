@@ -89,9 +89,11 @@ Only exposed to the Compute.</p>
 <dl class="docutils">
 <dt><strong>Data to post</strong>:</dt>
 <dd><ul class="first last simple">
-<li><em>perf</em> : performance of the trained model on all test data</li>
-<li><em>train_perf</em> : list of performances (one for each train data file)</li>
-<li><em>test_perf</em> : list of performances (one for each test data file)</li>
+<li><em>status</em> : status of the prediction task: <em>done</em> or <em>failed</em></li>
+<li>If <em>status = done</em>, post also:
+- <em>perf</em> : performance of the trained model on all test data
+- <em>train_perf</em> : list of performances (one for each train data file)
+- <em>test_perf</em> : list of performances (one for each test data file)</li>
 </ul>
 </dd>
 </dl>
