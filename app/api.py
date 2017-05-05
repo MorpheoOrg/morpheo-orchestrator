@@ -26,6 +26,9 @@ app.config['MONGO_HOST'] = mongo_host
 mongo = PyMongo(app)
 
 
+# Compute url to push new task to it (should be removed in phase 1.2)
+compute_url = os.environ.get('COMPUTE_URL')
+
 # Document fields to be added
 # data: uuid can be one element or a list, in this case all element have same
 # problems
@@ -179,14 +182,16 @@ def set_uplet_worker(uplet_type, uplet_uuid):
             collection = mongo.db[uplet_type]
             request_data = request.get_json()
             updated = collection.update_one(
-                {'uuid': uplet_uuid},
+                {'uuid': uplet_uuid, 'status': 'todo'},
                 {'$set': {'status': 'pending',
                           'worker': request_data['worker']}})
             if updated.modified_count == 1:
                 return jsonify({'%s_worker_set' % uplet_type: uplet_uuid}), 200
             else:
-                return jsonify({'Error': 'no worker set for %s %s' %
-                                (uplet_type, uplet_uuid)}), 400
+                return jsonify(
+                    {'Error':
+                     'worker not set for %s %s. Might be already pending' %
+                     (uplet_type, uplet_uuid)}), 400
         except KeyError:
             return jsonify({'Error': 'wrong key in posted data'}), 400
     else:

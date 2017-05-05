@@ -2,13 +2,15 @@ import time
 import random
 import numpy as np
 import uuid
+import requests
+import json
 import api
 
 
 def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
                       algo_uuid, model_uuid_start, start_rank):
     """
-    Function used to create learnuplets
+    Function used to create learnuplets and push them to Compute
 
     :param new_data: list of data UUIDs on which to do the training
     :param sz_batch: mini-batch size
@@ -63,7 +65,26 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
                           'timestamp_done': None}
         list_new_learnuplets.append(new_learnuplet)
         model_uuid_start = model_uuid_end
+        # Push the new learnuplet to Compute
+        worker_url = api.compute_url
+        if worker_url:
+            post_uplet(list_new_learnuplets, worker_url, 'learn')
     return list_new_learnuplets
+
+
+def post_uplet(list_uplet, worker_url, uplet_prefix):
+    """
+    post learnuplet/preduplet to a list of workers (Compute)
+    :param list_uplet: list of json containing learnuplets/preduplets
+    :param worker_url: worker url
+    :param uplet_prefix: pred or learn
+    :type list_uplet: list
+    :type worker_url: url
+    :type uplet_prefix: string
+    """
+    for uplet in list_uplet:
+        requests.post('%s/%s' % (worker_url, uplet_prefix),
+                      data=json.dumps(uplet))
 
 
 def algo_learnuplet(algo_uuid):
@@ -139,6 +160,7 @@ def create_preduplet(new_preduplet):
     :type new_preduplet: dictionary with keys data, problem, timestamp_request
     :return: 1 if creation of a preduplet, 0 if no model found
     """
+    # Find best model
     learnuplet_best_model = api.mongo.db.learnuplet.find_one(
         {"perf": {"$exists": True}, "problem": new_preduplet["problem"]},
         sort=[("perf", -1)])
@@ -149,6 +171,11 @@ def create_preduplet(new_preduplet):
         new_preduplet["worker"] = None
         new_preduplet["timestamp_done"] = None
         api.mongo.db.preduplet.insert_one(new_preduplet)
+        # Push the new learnuplet to Compute
+        # Push the new learnuplet to Compute
+        worker_url = api.compute_url
+        if worker_url:
+            post_uplet([new_preduplet], worker_url, 'pred')
         return 1
     else:
         return 0
