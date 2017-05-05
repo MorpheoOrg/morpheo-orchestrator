@@ -263,8 +263,10 @@ class APITestCase(unittest.TestCase):
     def test_report_perf_learnuplet_2(self):
         n_train = 5
         n_test = 5
-        train_perf = list(np.random.randn(n_train))
-        test_perf = list(np.random.randn(n_test))
+        train_perf = {'%s' % i: j for i, j
+                      in enumerate(list(np.random.randn(n_train)))}
+        test_perf = {'%s' % i: j for i, j
+                     in enumerate(list(np.random.randn(n_test)))}
         # add learnuplets
         learnuplet_list = generate_list_learnuplets(
             1, n_train=n_train, n_test=n_test, uuid_prefix="id0_",
