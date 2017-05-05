@@ -31,8 +31,8 @@ A learnuplet is made of the following elements:
 - `worker`: UUID of worker which is in charge of the training task defined by this learnuplet. *db.UUIDField()*.    
 - `status`: status of the training task. It can be `waiting` if we are waiting for a model training with a lower rank, `todo` if the traiing job can start, `pending` if a worker is currently consuming the task, or `done` if training has been done successfully, or `failed` is trainig has been unsuccesfully done. *db.StringField(max_length=8)*.     
 - `perf`: performance on test data. *db.FloadField()*.      
-- `test_perf`: list of performances on test data: each element is the performance on one test data file (same order as data uuid in `test_data`). *db.ListField(db.FloatField())*.      
-- `train_perf`: list of performances on train data: each element is the performance on one train data file (same order as data uuid in `train_data`). *db.ListField(db.FloatField())*.      
+- `test_perf`: dictionary of performances on test data: each element is the performance on one test data file (the keys being the corresponding data uuids). *db.ListField(db.FloatField())*.      
+- `train_perf`: dictionary of performances on train data: each element is the performance on one train data file (the keys being the corresponding data uuids). *db.ListField(db.FloatField())*.      
 - `training_creation`: timestamp of the learnuplet creation. *db.DateTimeField()*.  
 - `training_done`: timestamp of feeback from compute (when updating `status` to `done` or `failed`). *db.DateTimeField()*.  
 
