@@ -208,33 +208,40 @@ def report_perf_learnuplet(learnuplet_uuid):
     Only exposed to the Compute.
 
     **Data to post**:
-        - *perf* : performance of the trained model on all test data
-        - *train_perf* : list of performances (one for each train data file)
-        - *test_perf* : list of performances (one for each test data file)
+        - *status* : status of the prediction task: *done* or *failed*
+        - If *status = done*, post also:
+          - *perf* : performance of the trained model on all test data
+          - *train_perf* : list of performances (one for each train data file)
+          - *test_perf* : list of performances (one for each test data file)
     """
     # TODO: check identity of worker
     try:
         request_data = request.get_json()
-        # update performance in current learnuplet
-        updated_perf = mongo.db.learnuplet.update_one(
+        # update status in current learnuplet
+        updated_status = mongo.db.learnuplet.update_one(
             {'uuid': learnuplet_uuid},
-            {'$set': {'status': 'done',
-                      'perf': request_data['perf'],
-                      'train_perf': request_data['train_perf'],
-                      'test_perf': request_data['test_perf']}})
-        if updated_perf.modified_count == 1:
-            learnuplet_perf = mongo.db.learnuplet.find_one(
-                {'uuid': learnuplet_uuid})
-            # find learnuplet with best performance
-            best_learnuplet = mongo.db.learnuplet.find_one(
-                {"perf": {"$exists": True}, "algo": learnuplet_perf['algo']},
-                sort=[("perf", -1)])
-            # change model start in next learnuplet
-            next_model_start = best_learnuplet['model_end']
-            mongo.db.learnuplet.update_one(
-                {'rank': learnuplet_perf['rank'] + 1,
-                 'algo': learnuplet_perf['algo']},
-                {'$set': {'model_start': next_model_start}})
+            {'$set': {'status': request_data["status"]}})
+        # update perf in current learnuplet if learning has been done
+        if request_data["status"] == 'done':
+            updated_perf = mongo.db.learnuplet.update_one(
+                {'uuid': learnuplet_uuid},
+                {'$set': {'perf': request_data["perf"],
+                          'train_perf': request_data["train_perf"],
+                          'test_perf': request_data["test_perf"]}})
+            if updated_perf.modified_count == 1:
+                learnuplet_perf = mongo.db.learnuplet.find_one(
+                    {'uuid': learnuplet_uuid})
+                # find learnuplet with best performance
+                best_learnuplet = mongo.db.learnuplet.find_one(
+                    {"perf": {"$exists": True}, "algo": learnuplet_perf['algo']},
+                    sort=[("perf", -1)])
+                # change model start in next learnuplet
+                next_model_start = best_learnuplet['model_end']
+                mongo.db.learnuplet.update_one(
+                    {'rank': learnuplet_perf['rank'] + 1,
+                     'algo': learnuplet_perf['algo']},
+                    {'$set': {'model_start': next_model_start}})
+        if updated_status.modified_count == 1:
             # return updated learnupets
             return jsonify({'updated_learnuplet': learnuplet_uuid}), 200
         else:

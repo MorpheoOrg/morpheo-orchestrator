@@ -231,8 +231,10 @@ class APITestCase(unittest.TestCase):
     def test_report_perf_learnuplet_1(self):
         n_train = 5
         n_test = 5
-        train_perf = list(np.random.randn(n_train))
-        test_perf = list(np.random.randn(n_test))
+        train_perf = {'%s' % i: j for i, j
+                      in enumerate(list(np.random.randn(n_train)))}
+        test_perf = {'%s' % i: j for i, j
+                     in enumerate(list(np.random.randn(n_test)))}
         # add learnuplets
         learnuplet = generate_list_learnuplets(
             1, n_train=n_train, n_test=n_test, uuid_prefix="id_",
@@ -240,7 +242,7 @@ class APITestCase(unittest.TestCase):
         self.db.learnuplet.insert_one(learnuplet)
         # should be ok
         rv = self.app.post('/learndone/id_0',
-                           data=json.dumps({"perf": 0.9,
+                           data=json.dumps({"status": "done", "perf": 0.9,
                                             "train_perf": train_perf,
                                             "test_perf": test_perf}),
                            content_type='application/json')
@@ -249,7 +251,7 @@ class APITestCase(unittest.TestCase):
                                                   "perf": 0.9}).count(), 1)
         # wrong learnuplet uuid
         rv = self.app.post('/learndone/ad_0',
-                           data=json.dumps({"perf": 0.9,
+                           data=json.dumps({"status": "done", "perf": 0.9,
                                             "train_perf": train_perf,
                                             "test_perf": test_perf}),
                            content_type='application/json')
@@ -284,7 +286,11 @@ class APITestCase(unittest.TestCase):
             self.db.learnuplet.insert_one(learnuplet)
         # should be ok
         rv = self.app.post('/learndone/id2_0',
-                           data=json.dumps({"perf": 0.9,
+                           data=json.dumps({"status": "failed"}),
+                           content_type='application/json')
+        self.assertEqual(rv.status_code, 200)
+        rv = self.app.post('/learndone/id2_0',
+                           data=json.dumps({"status": "done", "perf": 0.9,
                                             "train_perf": train_perf,
                                             "test_perf": test_perf}),
                            content_type='application/json')
