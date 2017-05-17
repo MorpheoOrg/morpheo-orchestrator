@@ -1,3 +1,6 @@
+# stl
+import os
+
 # Sample Gunicorn configuration file.
 
 #
@@ -18,7 +21,9 @@
 #       range.
 #
 
-bind = '0.0.0.0:5000'
+listen_port = os.getenv("LISTEN_PORT", "5000")
+
+bind = '0.0.0.0:{}'.format(listen_port)
 backlog = 2048
 
 #
