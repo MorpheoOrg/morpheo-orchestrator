@@ -23,6 +23,8 @@ setvirtualenvproject
 pip install -r requirements.txt
 ```
 
+Define two env variables for (temporary) authentication: `USER_AUTH` and `PWD_AUTH`.
+
 Note: If you want to enable CORS, set the environment variable: `CORS=True`
 
 ## Usage
@@ -37,8 +39,8 @@ Launch the app: `python api.py`
 To launch the app with gunicorn: `gunicorn --config gunicorn_config.py api:app`
 
 Interact with the api:
-- GET example: `curl http://0.0.0.0:5000/problem` 
-- POST example: `curl http://0.0.0.0:5000/problem -d '{"uuid": "fc896fb1", "workflow": "ac432fx9"}' -X POST -H "Content-type: application/json"`
+- GET example: `curl -u $USER_AUTH:$PWD_AUTH http://0.0.0.0:5000/problem` 
+- POST example: `curl -u $USER_AUTH:$PWD_AUTH http://0.0.0.0:5000/problem -d '{"uuid": "fc896fb1", "workflow": "ac432fx9"}' -X POST -H "Content-type: application/json"`
 
 ## Run the app using Docker Compose
 

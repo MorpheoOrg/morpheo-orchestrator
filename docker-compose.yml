@@ -9,6 +9,8 @@ services:
     environment:
       - MONGO_HOST=mongodb
       - CORS=True
+      - USER_AUTH=test
+      - PWD_AUTH=test
   mongodb:
     image: mongo:3.4
     volumes:
