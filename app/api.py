@@ -4,7 +4,7 @@ from flask_cors import CORS
 from flask_pymongo import PyMongo
 import time
 import tasks
-
+from flask_basicauth import BasicAuth
 
 app = Flask(__name__)
 
@@ -21,6 +21,11 @@ if testing == "T":
 else:
     # link to prod db
     app.config['MONGO_DBNAME'] = 'orchestrator'
+    app.config['BASIC_AUTH_USERNAME'] = os.environ.get('USER_AUTH')
+    app.config['BASIC_AUTH_PASSWORD'] = os.environ.get('PWD_AUTH')
+    app.config['BASIC_AUTH_FORCE'] = True
+
+basic_auth = BasicAuth(app)
 mongo_host = os.environ.get('MONGO_HOST', "localhost")
 app.config['MONGO_HOST'] = mongo_host
 mongo = PyMongo(app)
