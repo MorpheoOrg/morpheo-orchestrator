@@ -54,32 +54,12 @@ def get_all_documents(collection_name):
     or **preduplet**
 
     Get all the document corresponding to the (*collection_name*).
+    Possible to add filter to your request (e.g. **/learnuplet?uuid=blabla**)
     """
     if collection_name in list_collection:
         collection = mongo.db[collection_name]
         output = [{k: v for k, v in d.items() if k != '_id'}
-                  for d in collection.find()]
-        return jsonify({'%ss' % collection_name: output}), 200
-    else:
-        return jsonify({'Error': 'Page does not exist'}), 404
-
-
-@app.route('/<collection_name>/<collection_filter>', methods=['GET'])
-def get_filtered_document(collection_name, collection_filter):
-    """
-    - (*collection_name*) : **problem**, **algo**, **data**, **learnuplet**,\
-        or **preduplet**
-    - (*collection_filter*): **filter_key=value**
-
-    Get document from (*collection_name*) corresponding to filter\
-        (*collection_filter*).
-    """
-    if collection_name in list_collection:
-        filter_key = collection_filter.split('=')[0]
-        filter_value = collection_filter.split('=')[1]
-        collection = mongo.db[collection_name]
-        output = [{k: v for k, v in d.items() if k != '_id'}
-                  for d in collection.find({filter_key: filter_value})]
+                  for d in collection.find(request.args)]
         return jsonify({'%ss' % collection_name: output}), 200
     else:
         return jsonify({'Error': 'Page does not exist'}), 404

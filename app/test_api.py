@@ -329,15 +329,15 @@ class APITestCase(unittest.TestCase):
         learnuplets = generate_list_learnuplets(10)
         self.db.learnuplet.insert_many(learnuplets)
         # should be ok
-        rv = self.app.get('/learnuplet/uuid=id_0',
+        rv = self.app.get('/learnuplet?uuid=id_0',
                            content_type='application/json')
         self.assertEqual(rv.status_code, 200)
         # wrong url
-        rv = self.app.get('/learnupleto/uuid=id_0',
+        rv = self.app.get('/learnupleto?uuid=id_0',
                            content_type='application/json')
         self.assertEqual(rv.status_code, 404)
         # wrong filter returns nothing
-        rv = self.app.get('/learnuplet/uuido=id_0',
+        rv = self.app.get('/learnuplet?uuido=id_0',
                            content_type='application/json')
         self.assertFalse(json.loads(rv.get_data(as_text=True))["learnuplets"])
 
