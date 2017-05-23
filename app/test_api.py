@@ -4,14 +4,22 @@ import json
 import time
 import numpy as np
 from pymongo import MongoClient
+from base64 import b64encode
+
 
 # It is important that the next two line be in that order (sorry PEP8)
 # Flask seems to instantiate the dB with the second line
 # And we want to make sure the environment variable is set before
 os.environ['TESTING'] = "T"
+os.environ['USER_AUTH'] = "test"
+os.environ['PWD_AUTH'] = "test"
 from api import app
 from api import list_collection
 
+headers = {
+    'Authorization': 'Basic %s' % b64encode(b"test:test").decode("ascii")
+}
+print(headers)
 
 def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
                               status="todo", perf=None, worker=None,
@@ -72,10 +80,10 @@ class APITestCase(unittest.TestCase):
     def test_get_all_documents(self):
         # try existing collection
         for collection_name in list_collection:
-            rv = self.app.get('/%s' % collection_name)
+            rv = self.app.get('/%s' % collection_name, headers=headers)
             self.assertEqual(rv.status_code, 200)
         # try wrong collection
-        rv = self.app.get('/dummy_field')
+        rv = self.app.get('/dummy_field', headers=headers)
         self.assertEqual(rv.status_code, 404)
 
     def test_create_problem(self):
@@ -84,7 +92,8 @@ class APITestCase(unittest.TestCase):
                            data=json.dumps({"uuid": "P1", "workflow": "W1",
                                             "test_dataset": ["TD1", "TD2"],
                                             "size_train_dataset": 4}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 201)
         # wrong field
         rv = self.app.post('/dummy_field',
@@ -92,12 +101,14 @@ class APITestCase(unittest.TestCase):
                                             "workflow": "never_written",
                                             "test_dataset": ["TD1", "TD2"],
                                             "size_train_dataset": 4}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 404)
         # existing field but wrong key
         rv = self.app.post('/problem',
                            data=json.dumps({"dummy": "ho"}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 400)
 
     def test_create_algo(self):
@@ -106,7 +117,8 @@ class APITestCase(unittest.TestCase):
                            data=json.dumps({"uuid": "P2", "workflow": "W2",
                                             "test_dataset": ["TD1", "TD2"],
                                             "size_train_dataset": 4}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 201)
         # add data for this problem and check there is no new learnuplet
         # as no algo have been uploaded
@@ -115,14 +127,16 @@ class APITestCase(unittest.TestCase):
                            data=json.dumps({"uuid": ["D%s" % i
                                                      for i in range(nb_data)],
                                             "problems": ["P2"]}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 201)
         self.assertEqual(
             json.loads(rv.get_data(as_text=True))["new_learnuplets"], 0)
         # add algo
         rv = self.app.post('/algo',
                            data=json.dumps({"uuid": "A", "problem": "P2"}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 201)
         # check learnuplet were created
         self.assertEqual(self.db.learnuplet.find({"algo": "A"}).count(), 3)
@@ -157,7 +171,8 @@ class APITestCase(unittest.TestCase):
                            data=json.dumps({"uuid": ["D3%s" % i for i
                                                      in range(n_data_new)],
                                             "problems": ["P3"]}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 201)
         self.assertEqual(
             json.loads(rv.get_data(as_text=True))["new_learnuplets"], 2)
@@ -181,20 +196,23 @@ class APITestCase(unittest.TestCase):
                            data=json.dumps({"data": ["DP%s" % i
                                                      for i in range(10)],
                                             "problem": "PP"}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 201)
         self.assertEqual(self.db.preduplet.find({"problem": "PP",
                                                  "status": "todo"}).count(), 1)
         # wrong key in request
         rv = self.app.post('/prediction',
                            data=json.dumps({"problem": "PP"}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 400)
         # non existing model or problem
         rv = self.app.post('/prediction',
                            data=json.dumps({"data": ["DPB1"],
                                             "problem": "IDONTEXIST"}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 400)
 
     def test_set_uplet_worker(self):
@@ -207,7 +225,8 @@ class APITestCase(unittest.TestCase):
             # good request
             rv = self.app.post('/worker/%s/id_0' % uplet,
                                data=json.dumps({"worker": "bobor"}),
-                               content_type='application/json')
+                               content_type='application/json',
+                               headers=headers)
             self.assertEqual(rv.status_code, 200)
             collection = self.db[uplet]
             self.assertEqual(collection.find({"uuid": "id_0",
@@ -215,17 +234,20 @@ class APITestCase(unittest.TestCase):
             # learnuplet uuid does not exist
             rv = self.app.post('/worker/%s/ad_0' % uplet,
                                data=json.dumps({"worker": "bobor"}),
-                               content_type='application/json')
+                               content_type='application/json',
+                               headers=headers)
             self.assertEqual(rv.status_code, 400)
             # wrong key in request
             rv = self.app.post('/worker/%s/id_0' % uplet,
                                data=json.dumps({"rocker": "oups"}),
-                               content_type='application/json')
+                               content_type='application/json',
+                               headers=headers)
             self.assertEqual(rv.status_code, 400)
         # wrong uplet name
         rv = self.app.post('/worker/uplet/id_0',
                            data=json.dumps({"worker": "oups"}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 404)
 
     def test_report_perf_learnuplet_1(self):
@@ -245,7 +267,8 @@ class APITestCase(unittest.TestCase):
                            data=json.dumps({"status": "done", "perf": 0.9,
                                             "train_perf": train_perf,
                                             "test_perf": test_perf}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(self.db.learnuplet.find({"uuid": "id_0",
                                                   "perf": 0.9}).count(), 1)
@@ -254,12 +277,14 @@ class APITestCase(unittest.TestCase):
                            data=json.dumps({"status": "done", "perf": 0.9,
                                             "train_perf": train_perf,
                                             "test_perf": test_perf}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 400)
         # wrong key in request
         rv = self.app.post('/learndone/id_0',
                            data=json.dumps({"sttys": "oups", "perfff": 0.9}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 400)
 
     def test_report_perf_learnuplet_2(self):
@@ -287,13 +312,15 @@ class APITestCase(unittest.TestCase):
         # should be ok
         rv = self.app.post('/learndone/id2_0',
                            data=json.dumps({"status": "failed"}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 200)
         rv = self.app.post('/learndone/id2_0',
                            data=json.dumps({"status": "done", "perf": 0.9,
                                             "train_perf": train_perf,
                                             "test_perf": test_perf}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(self.db.learnuplet.find({"uuid": "id2_0",
                                                   "perf": 0.9}).count(), 1)
@@ -310,19 +337,22 @@ class APITestCase(unittest.TestCase):
         # should be ok
         rv = self.app.post('/preddone/id_0',
                            data=json.dumps({"status": "done"}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(self.db.preduplet.find({"uuid": "id_0",
                                                  "status": "done"}).count(), 1)
         # wrong learnuplet uuid
         rv = self.app.post('/preddone/ad_0',
                            data=json.dumps({"status": "done"}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 400)
         # wrong key in request
         rv = self.app.post('/preddone/id_0',
                            data=json.dumps({"sttys": "oups"}),
-                           content_type='application/json')
+                           content_type='application/json',
+                           headers=headers)
         self.assertEqual(rv.status_code, 400)
 
     def test_get_filtered_document(self):
@@ -330,15 +360,18 @@ class APITestCase(unittest.TestCase):
         self.db.learnuplet.insert_many(learnuplets)
         # should be ok
         rv = self.app.get('/learnuplet?uuid=id_0',
-                           content_type='application/json')
+                           content_type='application/json',
+                          headers=headers)
         self.assertEqual(rv.status_code, 200)
         # wrong url
         rv = self.app.get('/learnupleto?uuid=id_0',
-                           content_type='application/json')
+                           content_type='application/json',
+                          headers=headers)
         self.assertEqual(rv.status_code, 404)
         # wrong filter returns nothing
         rv = self.app.get('/learnuplet?uuido=id_0',
-                           content_type='application/json')
+                           content_type='application/json',
+                          headers=headers)
         self.assertFalse(json.loads(rv.get_data(as_text=True))["learnuplets"])
 
 

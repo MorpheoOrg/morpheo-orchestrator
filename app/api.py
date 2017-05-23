@@ -4,7 +4,7 @@ from flask_cors import CORS
 from flask_pymongo import PyMongo
 import time
 import tasks
-from flask_basicauth import BasicAuth
+from flask_httpauth import HTTPBasicAuth
 
 app = Flask(__name__)
 
@@ -21,15 +21,19 @@ if testing == "T":
 else:
     # link to prod db
     app.config['MONGO_DBNAME'] = 'orchestrator'
-    app.config['BASIC_AUTH_USERNAME'] = os.environ.get('USER_AUTH')
-    app.config['BASIC_AUTH_PASSWORD'] = os.environ.get('PWD_AUTH')
-    app.config['BASIC_AUTH_FORCE'] = True
 
-basic_auth = BasicAuth(app)
 mongo_host = os.environ.get('MONGO_HOST', "localhost")
 app.config['MONGO_HOST'] = mongo_host
 mongo = PyMongo(app)
 
+auth = HTTPBasicAuth()
+users = {os.environ.get('USER_AUTH'):os.environ.get('PWD_AUTH')}
+
+@auth.get_password
+def get_pw(username):
+    if username in users:
+        return users.get(username)
+    return None
 
 # Compute url to push new task to it (should be removed in phase 1.2)
 compute_url = os.environ.get('COMPUTE_URL')
@@ -48,6 +52,7 @@ list_collection = list(post_document.keys()) + ['learnuplet', 'preduplet']
 post_request = {'prediction': ['data', 'problem']}
 
 @app.route('/<collection_name>', methods=['GET'])
+@auth.login_required
 def get_all_documents(collection_name):
     """
     - (*collection_name*) : **problem**, **algo**, **data**, **learnuplet**,
@@ -66,6 +71,7 @@ def get_all_documents(collection_name):
 
 
 @app.route('/<collection_name>', methods=['POST'])
+@auth.login_required
 def add_document(collection_name):
     """
     Add document to the collection whose name is (*collection_name*):
@@ -128,6 +134,7 @@ def add_document(collection_name):
 
 
 @app.route('/prediction', methods=['POST'])
+@auth.login_required
 def request_prediction():
     """
     Request a prediction on data for a given problem.
@@ -151,6 +158,7 @@ def request_prediction():
 
 
 @app.route('/worker/<uplet_type>/<uplet_uuid>', methods=['POST'])
+@auth.login_required
 def set_uplet_worker(uplet_type, uplet_uuid):
     """
     - (*uplet_type*) : **learnuplet** or **preduplet**
@@ -184,6 +192,7 @@ def set_uplet_worker(uplet_type, uplet_uuid):
 
 
 @app.route('/learndone/<learnuplet_uuid>', methods=['POST'])
+@auth.login_required
 def report_perf_learnuplet(learnuplet_uuid):
     """
     - (*learnuplet_uuid*) : **learnuplet UUID**
@@ -237,6 +246,7 @@ def report_perf_learnuplet(learnuplet_uuid):
 
 
 @app.route('/preddone/<preduplet_uuid>', methods=['POST'])
+@auth.login_required
 def update_preduplet(preduplet_uuid):
     """
     - (*preduplet_uuid*) : **preduplet UUID**
