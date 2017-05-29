@@ -105,6 +105,9 @@ def add_document(collection_name):
                 new_doc = {k: request_data[k]
                            for k in post_document[collection_name]}
                 new_doc['timestamp'] = timestamp
+                if 'size_train_dataset' in new_doc:
+                    new_doc['size_train_dataset'] = \
+                        int(new_doc['size_train_dataset'])
                 new_docs = [new_doc]
         except KeyError:
             return jsonify({'Error': 'wrong key in posted data'}), 400
