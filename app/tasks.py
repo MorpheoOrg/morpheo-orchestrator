@@ -100,17 +100,20 @@ def algo_learnuplet(algo_uuid):
     """
     new_algo = api.mongo.db.algo.find_one({"uuid": algo_uuid})
     problem = api.mongo.db.problem.find_one({"uuid": new_algo["problem"]})
+
     # Find all active data associated to the same problem
-    active_data = api.mongo.db.data.find({"problems": problem["uuid"]}).\
-        distinct("uuid")
-    # Create learnuplet for each fold if enough data exist
-    sz_batch = problem["size_train_dataset"]
-    test_data = problem["test_dataset"]
-    problem_uuid = problem["uuid"]
-    new_learnuplets = create_learnuplet(active_data, sz_batch, test_data,
-                                        problem_uuid, algo_uuid,
-                                        algo_uuid, 0)
-    api.mongo.db.learnuplet.insert_many(new_learnuplets)
+    new_learnuplets = []
+    if problem:
+        active_data = api.mongo.db.data.find({"problems": problem["uuid"]}). \
+            distinct("uuid")
+        # Create learnuplet for each fold if enough data exist
+        sz_batch = problem["size_train_dataset"]
+        test_data = problem["test_dataset"]
+        problem_uuid = problem["uuid"]
+        new_learnuplets = create_learnuplet(active_data, sz_batch, test_data,
+                                            problem_uuid, algo_uuid,
+                                            algo_uuid, 0)
+        api.mongo.db.learnuplet.insert_many(new_learnuplets)
     return len(new_learnuplets)
 
 
