@@ -36,7 +36,7 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
     # permuation of all active data and scattering into batchs
     n_data = len(new_data)
     perm_list = random.sample(range(n_data), n_data)
-    batchs_uuid = [list(np.array(new_data)[perm_list[i: i + sz_batch]])
+    batchs_uuid = [list(np.array(new_data)[perm_list[i: i + int(sz_batch)]])
                    for i in range(0, n_data, int(sz_batch))]
     # for each batch of data create a learnuplet
     for i, train_data in enumerate(batchs_uuid):
