@@ -1,5 +1,6 @@
 FROM python:3-alpine
 
+COPY ./requirements.txt /usr/src/.
 RUN apk add --no-cache libstdc++ && \
     apk add --no-cache \
     --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community \
@@ -8,14 +9,13 @@ RUN apk add --no-cache libstdc++ && \
     --virtual=.build-dependencies \
     g++ gfortran musl-dev \
     python3-dev && \
-    ln -s locale.h /usr/include/xlocale.h
+    ln -s locale.h /usr/include/xlocale.h && \
+    pip install -r /usr/src/requirements.txt && \
+    apk del .build-dependencies
 
-COPY ./requirements.txt /usr/src/.
-COPY ./app /usr/src/app
 WORKDIR /usr/src/app
-RUN pip install -r /usr/src/requirements.txt
 
-RUN apk del .build-dependencies
+COPY ./app /usr/src/app
 
 EXPOSE 5000
 
