@@ -95,8 +95,12 @@ def get_all_documents(collection_name):
     - (*collection_name*) : **problem**, **algo**, **data**, **learnuplet**,
     or **preduplet**
 
-    Get all the document corresponding to the (*collection_name*).
+    Get all the documents corresponding to the (*collection_name*).
     Possible to add filter to your request (e.g. **/learnuplet?uuid=blabla**)
+
+    **Success Response content**:
+        - *problems/algos/datas/learnuplets/preduplets*: list of corresponding
+        documents
     """
     if collection_name in list_collection:
         collection = mongo.db[collection_name]
@@ -107,67 +111,122 @@ def get_all_documents(collection_name):
         return jsonify({'Error': 'Page does not exist'}), 404
 
 
-@app.route('/<collection_name>', methods=['POST'])
+@app.route('/problem', methods=['POST'])
 @auth.login_required
-def add_document(collection_name):
+def add_problem():
     """
-    Add document to the collection whose name is (*collection_name*):
+    Add a new problem
 
-    ================  ==========================================================
-    Collection name   Data to post
-    ================  ==========================================================
-    *problem*         - *uuid* : problem UUID
-                      - *workflow* : workflow UUID
-                      - *test_dataset* : list of test data UUID
-                      - *size_train_dataset* : nb of train data per minibatch
-    *algo*            - *uuid* : algo UUID
-                      - *problem* : UUID of associated problem
-    *data*            - *uuid* : data UUID or list of data UUIDs
-                      - *problems* : UUID or list of UUID of associated problems
-    ================  ==========================================================
+    **Data to post**:
+        - *uuid* : problem UUID
+        - *workflow* : workflow UUID
+        - *test_dataset* : list of test data UUID
+        - *size_train_dataset* : nb of train data per minibatch (integer)
+
+    **Success Response content**:
+        - *new_problem*: new problem
     """
-    if collection_name in post_document.keys():
-        n_learnuplets = 0
-        collection = mongo.db[collection_name]
-        try:
-            request_data = request.get_json()
-            timestamp = int(time.time())
-            # TODO: validation on fields + check element does not exist
-            # TODO: check element exists on Storage
-            # if upload of multiple elements
-            if type(request_data["uuid"]) is list:
-                new_docs = []
-                for uuid in request_data["uuid"]:
-                    new_doc = {k: request_data[k] for k in
-                               post_document[collection_name] if k != "uuid"}
-                    new_doc['uuid'] = uuid
-                    new_doc['timestamp'] = timestamp
-                    new_docs.append(new_doc)
-            # if upload of one element
-            else:
-                new_doc = {k: request_data[k]
-                           for k in post_document[collection_name]}
-                new_doc['timestamp'] = timestamp
-                new_docs = [new_doc]
-        except KeyError:
-            return jsonify({'Error': 'wrong key in posted data'}), 400
-        # put docs in db
-        inserted_ids = collection.insert_many(new_docs).inserted_ids
-        # returns the documents uuids and create learnuplets
-        # find back created document(s)
-        uuid_new_docs = collection.find({'_id': {"$in": inserted_ids}}).\
-            distinct("uuid")
-        # create learnuplets
-        if collection_name == 'algo':
-            for uuid_new_doc in uuid_new_docs:
-                n_learnuplets += tasks.algo_learnuplet(uuid_new_doc)
-        elif collection_name == 'data':
-            for pb_uuid in request_data["problems"]:
-                n_learnuplets += tasks.data_learnuplet(pb_uuid, uuid_new_docs)
-        return jsonify({'uuid_new_%s' % collection_name: uuid_new_docs,
-                        'new_learnuplets': n_learnuplets}), 201
-    else:
-        return jsonify({'Error': 'Page does not exist'}), 404
+    collection = mongo.db['problem']
+    try:
+        request_data = request.get_json()
+        # TODO: validation on fields + check element does not exist
+        # TODO: check element exists on Storage
+        new_doc = {k: request_data[k] for k in post_document['problem']}
+        new_doc['timestamp'] = int(time.time())
+    except KeyError:
+        return jsonify({'Error': 'wrong key in posted data'}), 400
+    # put doc in db
+    inserted_id = collection.insert_one(new_doc).inserted_id
+    inserted_doc = collection.find_one({'_id': inserted_id})
+    inserted_doc.pop('_id')
+    return jsonify({'new_problem': inserted_doc}), 201
+
+
+@app.route('/algo', methods=['POST'])
+@auth.login_required
+def add_algo():
+    """
+    Add a new algorithm
+
+    **Data to post**:
+        - *uuid* : algo UUID
+        - *problem* : UUID of associated problem
+
+    **Success Response content**:
+        - *new_algo*: new algorithm
+        - *new_learnuplets*: number of newly created learnuplets
+    """
+    n_learnuplets = 0
+    collection = mongo.db['algo']
+    try:
+        request_data = request.get_json()
+        # TODO: validation on fields + check element does not exist
+        # TODO: check element exists on Storage
+        # Check associated problem exists
+        problem = mongo.db['problem'].\
+            find_one({'uuid': request_data['problem']})
+        if not problem:
+            return jsonify({'Error': 'non-existing related problem'}), 400
+        new_doc = {k: request_data[k] for k in post_document['algo']}
+        new_doc['timestamp'] = int(time.time())
+    except KeyError:
+        return jsonify({'Error': 'wrong key in posted data'}), 400
+    # put doc in db
+    inserted_id = collection.insert_one(new_doc).inserted_id
+    inserted_doc = collection.find_one({'_id': inserted_id})
+    inserted_doc.pop('_id')
+    n_learnuplets += tasks.algo_learnuplet(inserted_doc['uuid'])
+    return jsonify({'new_algo': inserted_doc,
+                    'new_learnuplets': n_learnuplets}), 201
+
+
+@app.route('/data', methods=['POST'])
+@auth.login_required
+def add_data():
+    """
+    Add data
+
+    **Data to post**:
+        - *uuid* : data UUID or list of data UUIDs
+        - *problems* : UUID or list of UUID of associated problems
+
+    **Success Response content**:
+        - *new_datas*: list of new data
+        - *new_learnuplets*: number of newly created learnuplets
+    """
+    n_learnuplets = 0
+    collection = mongo.db['data']
+    try:
+        request_data = request.get_json()
+        timestamp = int(time.time())
+        # TODO: validation on fields + check element does not exist
+        # TODO: check element exists on Storage
+        # Check associated problems exists
+        for pb in request_data['problems']:
+            problem = mongo.db['problem'].find_one({'uuid': pb})
+            if not problem:
+                return jsonify({'Error': 'non-existing related problem'}), 400
+        new_docs = []
+        for uuid in request_data["uuid"]:
+            new_doc = {k: request_data[k] for k in
+                       post_document['data'] if k != "uuid"}
+            new_doc['uuid'] = uuid
+            new_doc['timestamp'] = timestamp
+            new_docs.append(new_doc)
+    except KeyError:
+        return jsonify({'Error': 'wrong key in posted data'}), 400
+    # put docs in db
+    inserted_ids = collection.insert_many(new_docs).inserted_ids
+    # find back created document(s)
+    uuid_new_docs = collection.find({'_id': {"$in": inserted_ids}}).\
+        distinct("uuid")
+    new_docs = [{k: v for k, v in d.items() if k != '_id'}
+                for d in collection.find({'_id': {"$in": inserted_ids}})]
+    # create learnuplets
+    for pb_uuid in request_data["problems"]:
+        n_learnuplets += tasks.data_learnuplet(pb_uuid, uuid_new_docs)
+    return jsonify({'new_datas': new_docs,
+                    'new_learnuplets': n_learnuplets}), 201
 
 
 @app.route('/prediction', methods=['POST'])
@@ -179,6 +238,9 @@ def request_prediction():
     **Data to post**:
         - *data* : list of UUID on which to apply the prediction
         - *problem* : UUID of the associated problem
+
+    **Success Response content**:
+        - *new_preduplets*: number of newly created preduplets
     """
     try:
         request_data = request.get_json()
@@ -206,6 +268,10 @@ def set_uplet_worker(uplet_type, uplet_uuid):
 
     **Data to post**:
         - *worker* : worker UUID
+
+    **Success Response content**:
+        - *learnuplet/preduplet_worker_set*: uuid of updated learnuplet or
+        preduplet
     """
     if uplet_type in ['learnuplet', 'preduplet']:
         try:
@@ -244,6 +310,9 @@ def report_perf_learnuplet(learnuplet_uuid):
           - *perf* : performance of the trained model on all test data
           - *train_perf* : list of performances (one for each train data file)
           - *test_perf* : list of performances (one for each test data file)
+
+    **Success Response content**:
+        - *updated_learnuplet*: uuid of updated learnuplet
     """
     # TODO: check identity of worker
     try:
@@ -293,6 +362,9 @@ def update_preduplet(preduplet_uuid):
 
     **Data to post**:
         - *status* : status of the prediction task: *done* or *failed*
+
+    **Success Response content**:
+        - *updated_preduplet*: uuid of updated preduplet
     """
     try:
         request_data = request.get_json()
