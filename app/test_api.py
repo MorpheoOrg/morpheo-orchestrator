@@ -132,15 +132,6 @@ class APITestCase(unittest.TestCase):
                            content_type='application/json',
                            headers=headers)
         self.assertEqual(rv.status_code, 201)
-        # wrong field
-        rv = self.app.post('/dummy_field',
-                           data=json.dumps({"uuid": "ha",
-                                            "workflow": "never_written",
-                                            "test_dataset": ["TD1", "TD2"],
-                                            "size_train_dataset": 4}),
-                           content_type='application/json',
-                           headers=headers)
-        self.assertEqual(rv.status_code, 404)
         # existing field but wrong key
         rv = self.app.post('/problem',
                            data=json.dumps({"dummy": "ho"}),
@@ -169,6 +160,12 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(rv.status_code, 201)
         self.assertEqual(
             json.loads(rv.get_data(as_text=True))["new_learnuplets"], 0)
+        # try to add algo associated with non-existing problem
+        rv = self.app.post('/algo',
+                           data=json.dumps({"uuid": "A", "problem": "EMPTY"}),
+                           content_type='application/json',
+                           headers=headers)
+        self.assertEqual(rv.status_code, 400)
         # add algo
         rv = self.app.post('/algo',
                            data=json.dumps({"uuid": "A", "problem": "P2"}),
@@ -204,6 +201,15 @@ class APITestCase(unittest.TestCase):
             1, n_train=n_data, n_test=1, problem="P3", model_prefix="A3",
             worker="WW", perf=0.99, status="done")
         self.db.learnuplet.insert_many(learnuplet_done)
+        # try to add data associated with non-existing problem
+        rv = self.app.post('/data',
+                           data=json.dumps({"uuid": ["D3%s" % i for i
+                                                     in range(n_data_new)],
+                                            "problems": ["EMPTY"]}),
+                           content_type='application/json',
+                           headers=headers)
+        self.assertEqual(rv.status_code, 400)
+        # add data
         rv = self.app.post('/data',
                            data=json.dumps({"uuid": ["D3%s" % i for i
                                                      in range(n_data_new)],
