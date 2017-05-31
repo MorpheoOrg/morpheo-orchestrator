@@ -56,6 +56,72 @@
 <li><em>problem</em> : UUID of the associated problem</li>
 </ul>
 </dd>
+<dt><strong>Success Response content</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>new_preduplets</em>: number of newly created preduplets</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--problem">
+<code class="descname">POST </code><code class="descname">/problem</code><a class="headerlink" href="#post--problem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new problem</p>
+<dl class="docutils">
+<dt><strong>Data to post</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>uuid</em> : problem UUID</li>
+<li><em>workflow</em> : workflow UUID</li>
+<li><em>test_dataset</em> : list of test data UUID</li>
+<li><em>size_train_dataset</em> : nb of train data per minibatch (integer)</li>
+</ul>
+</dd>
+<dt><strong>Success Response content</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>new_problem</em>: new problem</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--algo">
+<code class="descname">POST </code><code class="descname">/algo</code><a class="headerlink" href="#post--algo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a new algorithm</p>
+<dl class="docutils">
+<dt><strong>Data to post</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>uuid</em> : algo UUID</li>
+<li><em>problem</em> : UUID of associated problem</li>
+</ul>
+</dd>
+<dt><strong>Success Response content</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>new_algo</em>: new algorithm</li>
+<li><em>new_learnuplets</em>: number of newly created learnuplets</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="post">
+<dt id="post--data">
+<code class="descname">POST </code><code class="descname">/data</code><a class="headerlink" href="#post--data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add data</p>
+<dl class="docutils">
+<dt><strong>Data to post</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>uuid</em> : data UUID or list of data UUIDs</li>
+<li><em>problems</em> : UUID or list of UUID of associated problems</li>
+</ul>
+</dd>
+<dt><strong>Success Response content</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>new_datas</em>: list of new data</li>
+<li><em>new_learnuplets</em>: number of newly created learnuplets</li>
+</ul>
+</dd>
 </dl>
 </dd></dl>
 
@@ -73,6 +139,12 @@ pending (only exposed to the Compute).</p>
 <dd><ul class="first last simple">
 <li><em>worker</em> : worker UUID</li>
 </ul>
+</dd>
+<dt><strong>Success Response content</strong>:</dt>
+<dd><ul class="first simple">
+<li><em>learnuplet/preduplet_worker_set</em>: uuid of updated learnuplet or</li>
+</ul>
+<p class="last">preduplet</p>
 </dd>
 </dl>
 </dd></dl>
@@ -96,6 +168,11 @@ Only exposed to the Compute.</p>
 - <em>test_perf</em> : list of performances (one for each test data file)</li>
 </ul>
 </dd>
+<dt><strong>Success Response content</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>updated_learnuplet</em>: uuid of updated learnuplet</li>
+</ul>
+</dd>
 </dl>
 </dd></dl>
 
@@ -113,6 +190,11 @@ Only exposed to the Compute.</p>
 <li><em>status</em> : status of the prediction task: <em>done</em> or <em>failed</em></li>
 </ul>
 </dd>
+<dt><strong>Success Response content</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>updated_preduplet</em>: uuid of updated preduplet</li>
+</ul>
+</dd>
 </dl>
 </dd></dl>
 
@@ -123,50 +205,16 @@ Only exposed to the Compute.</p>
 <li>(<em>collection_name</em>) : <strong>problem</strong>, <strong>algo</strong>, <strong>data</strong>, <strong>learnuplet</strong>,</li>
 </ul>
 <p>or <strong>preduplet</strong></p>
-<p>Get all the document corresponding to the (<em>collection_name</em>).
+<p>Get all the documents corresponding to the (<em>collection_name</em>).
 Possible to add filter to your request (e.g. <strong>/learnuplet?uuid=blabla</strong>)</p>
-</dd></dl>
-
-<dl class="post">
-<dt id="post--(collection_name)">
-<code class="descname">POST </code><code class="descname">/</code><span class="sig-paren">(</span><em>collection_name</em><span class="sig-paren">)</span><a class="headerlink" href="#post--(collection_name)" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add document to the collection whose name is (<em>collection_name</em>):</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="22%" />
-<col width="78%" />
-</colgroup>
-<thead valign="bottom">
-<tr class="row-odd"><th class="head">Collection name</th>
-<th class="head">Data to post</th>
-</tr>
-</thead>
-<tbody valign="top">
-<tr class="row-even"><td><em>problem</em></td>
-<td><ul class="first last simple">
-<li><em>uuid</em> : problem UUID</li>
-<li><em>workflow</em> : workflow UUID</li>
-<li><em>test_dataset</em> : list of test data UUID</li>
-<li><em>size_train_dataset</em> : nb of train data per minibatch</li>
+<dl class="docutils">
+<dt><strong>Success Response content</strong>:</dt>
+<dd><ul class="first simple">
+<li><em>problems/algos/datas/learnuplets/preduplets</em>: list of corresponding</li>
 </ul>
-</td>
-</tr>
-<tr class="row-odd"><td><em>algo</em></td>
-<td><ul class="first last simple">
-<li><em>uuid</em> : algo UUID</li>
-<li><em>problem</em> : UUID of associated problem</li>
-</ul>
-</td>
-</tr>
-<tr class="row-even"><td><em>data</em></td>
-<td><ul class="first last simple">
-<li><em>uuid</em> : data UUID or list of data UUIDs</li>
-<li><em>problems</em> : UUID or list of UUID of associated problems</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
+<p class="last">documents</p>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
