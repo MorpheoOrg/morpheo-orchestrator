@@ -1,9 +1,11 @@
 # Orchestrator
-Provide tracability of learning and predictions.
+Provide tracability of learning and predictions on Morpheo platform.
 
-A RESTful API with Flask (and [Flask-PyMongo](https://flask-pymongo.readthedocs.io/en/latest/)) for the Orchestrator.
+A RESTful API with Flask (and [Flask-PyMongo](https://flask-pymongo.readthedocs.io/en/latest/)).
 
 Documentation (with endpoints specification) can be found [here!](https://morpheoorg.github.io/morpheo-orchestrator/)
+
+**Licence:** CECILL 2.1 (compatible with GNU GPL)
 
 ## Getting started
 
@@ -61,6 +63,3 @@ Run
 `coverage report -m api.py`  
 Without `-m api.py` the coverage report goes to irrelevant depth. We can specify the files to be reported on with `-m file1 file2 ...`
 
-## TODO
-
-- [ ] Check deployment with kubernetes  
