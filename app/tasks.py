@@ -80,12 +80,12 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
         j = i + start_rank
         # TODO create model_uuid_end function of model_uuid_start...
         # for now we only generate random UUID....which has to be modified
-        model_uuid_end = uuid.uuid4()
+        model_uuid_end = uuid.uuid4().hex
         if j == start_rank:
             model_start = model_uuid_start
         else:
             model_start = ''
-        new_learnuplet = {"uuid": uuid.uuid4(),
+        new_learnuplet = {"uuid": uuid.uuid4().hex,
                           "problem": problem_uuid,
                           "algo": algo_uuid,
                           "model_start": model_start,
@@ -102,10 +102,10 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
                           'timestamp_done': None}
         list_new_learnuplets.append(new_learnuplet)
         model_uuid_start = model_uuid_end
-        # Push the new learnuplet to Compute
+        # Push the new learnuplet to Compute, which has a model_start
         worker_url = api.compute_url
-        if worker_url:
-            post_uplet(list_new_learnuplets, worker_url, 'learn')
+        if worker_url and j == start_rank:
+            post_uplet([new_learnuplet], worker_url, 'learn')
     return list_new_learnuplets
 
 
@@ -208,7 +208,7 @@ def create_preduplet(new_preduplet):
         {"perf": {"$exists": True}, "problem": new_preduplet["problem"]},
         sort=[("perf", -1)])
     if learnuplet_best_model:
-        new_preduplet["uuid"] = uuid.uuid4()
+        new_preduplet["uuid"] = uuid.uuid4().hex
         new_preduplet["model"] = learnuplet_best_model["model_end"]
         new_preduplet["status"] = "todo"
         new_preduplet["worker"] = None

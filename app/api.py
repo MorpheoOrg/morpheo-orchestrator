@@ -341,10 +341,17 @@ def report_perf_learnuplet(learnuplet_uuid):
                     sort=[("perf", -1)])
                 # change model start in next learnuplet
                 next_model_start = best_learnuplet['model_end']
-                mongo.db.learnuplet.update_one(
+                next_learnuplet = mongo.db.learnuplet.update_one(
                     {'rank': learnuplet_perf['rank'] + 1,
                      'algo': learnuplet_perf['algo']},
                     {'$set': {'model_start': next_model_start}})
+                # push it to compute
+                if next_learnuplet.modified_count == 1 and compute_url:
+                    new_learnuplet = mongo.db.learnuplet.find_one(
+                        {'rank': learnuplet_perf['rank'] + 1,
+                         'algo': learnuplet_perf['algo']})
+                    new_learnuplet.pop('_id')
+                    tasks.post_uplet([new_learnuplet], compute_url, 'learn')
         if updated_status.modified_count == 1:
             # return updated learnupets
             return jsonify({'updated_learnuplet': learnuplet_uuid}), 200
