@@ -120,6 +120,9 @@ def post_uplet(list_uplet, worker_url, uplet_prefix):
     :type uplet_prefix: string
     """
     for uplet in list_uplet:
+        for k, v in uplet.items():
+            if type(v) == uuid.UUID:
+                uplet[k] = v.hex
         requests.post('%s/%s' % (worker_url, uplet_prefix),
                       data=json.dumps(uplet))
 
