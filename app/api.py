@@ -207,7 +207,11 @@ def add_data():
             if not problem:
                 return jsonify({'Error': 'non-existing related problem'}), 400
         new_docs = []
-        for uuid in request_data["uuid"]:
+        if type(request_data["uuid"]) is not list:
+            list_uuids = [request_data["uuid"]]
+        else:
+            list_uuids = request_data["uuid"]
+        for uuid in list_uuids:
             new_doc = {k: request_data[k] for k in
                        post_document['data'] if k != "uuid"}
             new_doc['uuid'] = uuid
