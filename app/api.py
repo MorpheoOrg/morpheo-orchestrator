@@ -132,7 +132,7 @@ def add_problem():
         # TODO: validation on fields + check element does not exist
         # TODO: check element exists on Storage
         new_doc = {k: request_data[k] for k in post_document['problem']}
-        new_doc['timestamp'] = int(time.time())
+        new_doc['timestamp_upload'] = int(time.time())
     except KeyError:
         return jsonify({'Error': 'wrong key in posted data'}), 400
     # put doc in db
@@ -168,7 +168,7 @@ def add_algo():
         if not problem:
             return jsonify({'Error': 'non-existing related problem'}), 400
         new_doc = {k: request_data[k] for k in post_document['algo']}
-        new_doc['timestamp'] = int(time.time())
+        new_doc['timestamp_upload'] = int(time.time())
     except KeyError:
         return jsonify({'Error': 'wrong key in posted data'}), 400
     # put doc in db
@@ -211,7 +211,7 @@ def add_data():
             new_doc = {k: request_data[k] for k in
                        post_document['data'] if k != "uuid"}
             new_doc['uuid'] = uuid
-            new_doc['timestamp'] = timestamp
+            new_doc['timestamp_upload'] = timestamp
             new_docs.append(new_doc)
     except KeyError:
         return jsonify({'Error': 'wrong key in posted data'}), 400
