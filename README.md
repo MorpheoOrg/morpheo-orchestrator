@@ -42,7 +42,7 @@ To launch the app with gunicorn: `gunicorn --config gunicorn_config.py api:app`
 
 Interact with the api:
 - GET example: `curl -u $USER_AUTH:$PWD_AUTH http://0.0.0.0:5000/problem` 
-- POST example: `curl -u $USER_AUTH:$PWD_AUTH http://0.0.0.0:5000/problem -d '{"uuid": "fc896fb1", "workflow": "ac432fx9"}' -X POST -H "Content-type: application/json"`
+- POST example: `curl -u $USER_AUTH:$PWD_AUTH http://0.0.0.0:5000/problem -d '{"uuid": "2d0aa3a3-eb5f-42e6-9d34-c6e4db235816", "workflow": "5d13b116-6dad-4311-94a6-784273cc0467",  'test_dataset': ['7aca2765-996a-4175-8d46-7f32ba34d75e', 'ec619ded-5907-45e2-bf73-42b0873e807b'], 'size_train_dataset': 2}' -X POST -H "Content-type: application/json"`
 
 ## Run the app using Docker Compose
 
