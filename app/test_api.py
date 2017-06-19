@@ -58,10 +58,11 @@ headers = {
 }
 print(headers)
 
+
 def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
-                              status="todo", perf=None, worker=None,
-                              algo_prefix="MD_", model_prefix="MD_",
-                              uuid_prefix="id_", rank=0,
+                              workflow="PW", status="todo", perf=None,
+                              worker=None, algo_prefix="MD_",
+                              model_prefix="MD_", uuid_prefix="id_", rank=0,
                               timestamp_creation=None, timestamp_done=None):
     if type(perf) is not list:
         perf = [perf] * n_learnuplet
@@ -76,8 +77,8 @@ def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
         train_perf = None
         test_perf = None
     list_learnuplets = [
-        {"problem": problem, "worker": worker, "perf": perf[j],
-         "train_perf": train_perf, "test_perf": test_perf,
+        {"problem": problem, "workflow": workflow, "worker": worker,
+         "perf": perf[j], "train_perf": train_perf, "test_perf": test_perf,
          "status": status, "algo": "%s%s_s" % (algo_prefix, j),
          "model_start": "%s%s_s" % (model_prefix, j),
          "model_end": "%s%s_e" % (model_prefix, j), "rank": rank,
@@ -89,16 +90,17 @@ def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
     return list_learnuplets
 
 
-def generate_list_preduplets(n_preduplet, n_data=4, problem="PB", model="MD",
-                            worker=None, status="todo", uuid_prefix="id_",
-                            timestamp_request=None, timestamp_done=None):
+def generate_list_preduplets(n_preduplet, n_data=4, problem="PB", workflow="PW",
+                             model="MD", worker=None, status="todo",
+                             uuid_prefix="id_",
+                             timestamp_request=None, timestamp_done=None):
     if not timestamp_request:
         timestamp_request = int(time.time())
     list_preduplets = [
         {"problem": problem, "worker": worker, "status": status, "model": model,
          "data": ["T%s%s" % (i, j) for i in range(n_data)],
          "timestamp_request": timestamp_request,
-         "timestamp_done": timestamp_done,
+         "timestamp_done": timestamp_done, "workflow": workflow,
          "uuid": "%s%s" % (uuid_prefix, j)}
         for j in range(n_preduplet)]
     return list_preduplets
@@ -198,8 +200,8 @@ class APITestCase(unittest.TestCase):
                                    "timestamp_upload": int(time.time())}])
         # add learnuplet which are already trained
         learnuplet_done = generate_list_learnuplets(
-            1, n_train=n_data, n_test=1, problem="P3", model_prefix="A3",
-            worker="WW", perf=0.99, status="done")
+            1, n_train=n_data, n_test=1, problem="P3", workflow="W3",
+            model_prefix="A3", worker="WW", perf=0.99, status="done")
         self.db.learnuplet.insert_many(learnuplet_done)
         # try to add data associated with non-existing problem
         rv = self.app.post('/data',
@@ -220,18 +222,22 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(
             json.loads(rv.get_data(as_text=True))["new_learnuplets"], 2)
         self.assertEqual(self.db.learnuplet.find({"problem": "P3"}).count(), 3)
-        self.assertEqual(self.db.learnuplet.find({"problem": "P3",
-                                                  "status": "todo",
-                                                  "model_start": {"$ne":''}}).count(), 1)
+        self.assertEqual(self.db.learnuplet.find(
+            {"problem": "P3", "status": "todo", "model_start": {"$ne": ''}}).
+            count(), 1)
         self.assertEqual(
             self.db.learnuplet.find({"problem": "P3",
                                      "status": "todo",
                                      "model_start": ''}).count(), 1)
 
     def test_request_prediction(self):
+        # add problem
+        self.db.problem.insert_one({"uuid": "PP", "workflow": "WW",
+                                    "test_dataset": ["TD1"],
+                                    "size_train_dataset": 2})
         # add learnuplet
         learnuplets = generate_list_learnuplets(
-            2, n_train=5, n_test=1, problem="PP",
+            2, n_train=5, n_test=1, problem="PP", workflow="WW",
             worker="  ", status="done", perf=[0.96, 0.98])
         self.db.learnuplet.insert_many(learnuplets)
         # request possible prediction and check preduplet has been created
@@ -403,17 +409,17 @@ class APITestCase(unittest.TestCase):
         self.db.learnuplet.insert_many(learnuplets)
         # should be ok
         rv = self.app.get('/learnuplet?uuid=id_0',
-                           content_type='application/json',
+                          content_type='application/json',
                           headers=headers)
         self.assertEqual(rv.status_code, 200)
         # wrong url
         rv = self.app.get('/learnupleto?uuid=id_0',
-                           content_type='application/json',
+                          content_type='application/json',
                           headers=headers)
         self.assertEqual(rv.status_code, 404)
         # wrong filter returns nothing
         rv = self.app.get('/learnuplet?uuido=id_0',
-                           content_type='application/json',
+                          content_type='application/json',
                           headers=headers)
         self.assertFalse(json.loads(rv.get_data(as_text=True))["learnuplets"])
 

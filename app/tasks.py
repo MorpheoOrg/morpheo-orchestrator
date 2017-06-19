@@ -45,7 +45,7 @@ import api
 
 
 def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
-                      algo_uuid, model_uuid_start, start_rank):
+                      workflow_uuid, algo_uuid, model_uuid_start, start_rank):
     """
     Function used to create learnuplets and push them to Compute
 
@@ -53,6 +53,7 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
     :param sz_batch: mini-batch size
     :param test_data: list of test data UUIDs
     :param problem_uuid: UUID of the problem
+    :param workflow_uuid: UUID of the workflow
     :param algo_uuid: UUID of the submitted algorithm (before any training)
     :param model_uuid_start: UUID of model from which to start the training\
         (equals algo_uuid if start_rank=0)
@@ -62,6 +63,7 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
     :type sz_batch: integer
     :type test_data: list of UUIDs
     :type problem_uuid: UUID
+    :type workflow_uuid: UUID
     :type algo_uuid: UUID
     :type model_uuid_start: UUID
     :type start_rank: integer
@@ -87,6 +89,7 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
             model_start = ''
         new_learnuplet = {"uuid": str(uuid.uuid4()),
                           "problem": problem_uuid,
+                          "workflow": workflow_uuid,
                           "algo": algo_uuid,
                           "model_start": model_start,
                           "model_end": model_uuid_end,
@@ -151,9 +154,10 @@ def algo_learnuplet(algo_uuid):
         sz_batch = problem["size_train_dataset"]
         test_data = problem["test_dataset"]
         problem_uuid = problem["uuid"]
+        workflow_uuid = problem["workflow"]
         new_learnuplets = create_learnuplet(active_data, sz_batch, test_data,
-                                            problem_uuid, algo_uuid,
-                                            algo_uuid, 0)
+                                            problem_uuid, workflow_uuid,
+                                            algo_uuid, algo_uuid, 0)
         api.mongo.db.learnuplet.insert_many(new_learnuplets)
     return len(new_learnuplets)
 
@@ -179,6 +183,7 @@ def data_learnuplet(problem_uuid, data_uuids):
     if list_uuid_algo:
         sz_batch = problem["size_train_dataset"]
         test_data = problem["test_dataset"]
+        workflow_uuid = problem["workflow"]
         for uuid_algo in list_uuid_algo:
             last_learnuplet = api.mongo.db.learnuplet.find_one(
                 {"rank": {"$exists": True}, "algo": uuid_algo},
@@ -187,8 +192,8 @@ def data_learnuplet(problem_uuid, data_uuids):
             # TODO modify. Problem: what if pending models????
             last_model = last_learnuplet["model_end"]
             new_learnuplets = create_learnuplet(data_uuids, sz_batch,
-                                                test_data,
-                                                problem_uuid, uuid_algo,
+                                                test_data, problem_uuid,
+                                                workflow_uuid, uuid_algo,
                                                 last_model, last_rank + 1)
             api.mongo.db.learnuplet.insert_many(new_learnuplets)
             n += len(new_learnuplets)
@@ -208,14 +213,16 @@ def create_preduplet(new_preduplet):
     learnuplet_best_model = api.mongo.db.learnuplet.find_one(
         {"perf": {"$exists": True}, "problem": new_preduplet["problem"]},
         sort=[("perf", -1)])
+    # Find associated problem
+    problem = api.mongo.db.problem.find_one({"uuid": new_preduplet["problem"]})
     if learnuplet_best_model:
         new_preduplet["uuid"] = str(uuid.uuid4())
         new_preduplet["model"] = learnuplet_best_model["model_end"]
         new_preduplet["status"] = "todo"
         new_preduplet["worker"] = None
         new_preduplet["timestamp_done"] = None
+        new_preduplet["workflow"] = problem["workflow"]
         api.mongo.db.preduplet.insert_one(new_preduplet)
-        # Push the new learnuplet to Compute
         # Push the new learnuplet to Compute
         worker_url = api.compute_url
         if worker_url:
