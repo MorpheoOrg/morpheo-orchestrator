@@ -22,6 +22,7 @@ It is then used by `Compute` to do the training.
 A learnuplet is made of the following elements:
 - `uuid`: a unique identifier of the task. *db.UUIDField()*.    
 - `problem`: the UUID of the problem associated to the learning task. *db.UUIDField()*.   
+- `workflow`: the UUID of the problem workflow associated to the learning task. *db.UUIDField()*.   
 - `train_data`: list of train data UUIDs, on which the learning will be done. *db.ListField(db.UUIDField())*.      
 - `test_data`: list of test data UUIDs, on which the performance of the algorithm is computed. *db.ListField(db.UUIDField())*.    
 - `algo`: UUID of submitted algorithm. *db.UUIDField()*.    
@@ -92,6 +93,7 @@ For details about how to register a `data`, see the [endpoints documentation](./
 A `preduplet` is created in the `Orchestrator` when a prediction is requested. It has the following fields:
 - `uuid`: . *db.UUIDField()*  
 - `problem`: . *db.UUIDField(max_length=50)*.  
+- `workflow`: . *db.UUIDField(max_length=50)*.  
 - `data`:  . *db.ListField(db.UUIDField())*.  
 - `model`: . *db.UUIDField()*.  
 - `worker`:  *db.UUIDField()*.  
