@@ -1,7 +1,6 @@
 # Orchestrator
-Provide tracability of learning and predictions on Morpheo platform.
 
-A RESTful API with Flask (and [Flask-PyMongo](https://flask-pymongo.readthedocs.io/en/latest/)).
+A RESTful API with Flask (and [Flask-PyMongo](https://flask-pymongo.readthedocs.io/en/latest/)), which provides traceability of transactions occuring on the [Morpheo platform](https://morpheoorg.github.io/morpheo/index.html). In its next version, the Orchestrator will be translated to a permissionned blockchain. 
 
 Documentation (with endpoints specification) can be found [here!](https://morpheoorg.github.io/morpheo-orchestrator/)
 
@@ -40,7 +39,7 @@ on OSX
 Launch the app: `python api.py`  
 To launch the app with gunicorn: `gunicorn --config gunicorn_config.py api:app`
 
-Interact with the api:
+Interact with the api ([see here for more details](https://morpheoorg.github.io/morpheo-orchestrator/modules/endpoints.html)):
 - GET example: `curl -u $USER_AUTH:$PWD_AUTH http://0.0.0.0:5000/problem` 
 - POST example: `curl -u $USER_AUTH:$PWD_AUTH http://0.0.0.0:5000/problem -d '{"uuid": "2d0aa3a3-eb5f-42e6-9d34-c6e4db235816", "workflow": "5d13b116-6dad-4311-94a6-784273cc0467",  'test_dataset': ['7aca2765-996a-4175-8d46-7f32ba34d75e', 'ec619ded-5907-45e2-bf73-42b0873e807b'], 'size_train_dataset': 2}' -X POST -H "Content-type: application/json"`
 
