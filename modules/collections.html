@@ -70,6 +70,7 @@ It is then used by <code class="docutils literal"><span class="pre">Compute</spa
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">uuid</span></code>: a unique identifier of the task. <em>db.UUIDField()</em>.</li>
 <li><code class="docutils literal"><span class="pre">problem</span></code>: the UUID of the problem associated to the learning task. <em>db.UUIDField()</em>.</li>
+<li><code class="docutils literal"><span class="pre">workflow</span></code>: the UUID of the problem workflow associated to the learning task. <em>db.UUIDField()</em>.</li>
 <li><code class="docutils literal"><span class="pre">train_data</span></code>: list of train data UUIDs, on which the learning will be done. <em>db.ListField(db.UUIDField())</em>.</li>
 <li><code class="docutils literal"><span class="pre">test_data</span></code>: list of test data UUIDs, on which the performance of the algorithm is computed. <em>db.ListField(db.UUIDField())</em>.</li>
 <li><code class="docutils literal"><span class="pre">algo</span></code>: UUID of submitted algorithm. <em>db.UUIDField()</em>.</li>
@@ -140,6 +141,7 @@ For phase 1.2, a <code class="docutils literal"><span class="pre">Poster</span><
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">uuid</span></code>: . <em>db.UUIDField()</em></li>
 <li><code class="docutils literal"><span class="pre">problem</span></code>: . <em>db.UUIDField(max_length=50)</em>.</li>
+<li><code class="docutils literal"><span class="pre">workflow</span></code>: . <em>db.UUIDField(max_length=50)</em>.</li>
 <li><code class="docutils literal"><span class="pre">data</span></code>:  . <em>db.ListField(db.UUIDField())</em>.</li>
 <li><code class="docutils literal"><span class="pre">model</span></code>: . <em>db.UUIDField()</em>.</li>
 <li><code class="docutils literal"><span class="pre">worker</span></code>:  <em>db.UUIDField()</em>.</li>
