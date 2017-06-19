@@ -126,7 +126,7 @@ def post_uplet(list_uplet, worker_url, uplet_prefix):
         print(uplet)
         for k, v in uplet.items():
             if type(v) == uuid.UUID:
-                uplet[k] = v.hex
+                uplet[k] = str(v)
         requests.post('%s/%s' % (worker_url, uplet_prefix),
                       data=json.dumps(uplet))
 
