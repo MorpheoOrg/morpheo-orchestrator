@@ -125,8 +125,8 @@ html_theme_options = {
     'headlinkcolor': '#685ff7',
     'codebgcolor': '#edeff6',
     'codebgcolor': '#878391',
-    'bodyfont': '"Courier New", Courier, monospace',
-    'headfont': '"Courier New", Courier, monospace',
+    'bodyfont': '"Trebuchet MS", Helvetica, sans-serif',
+    'headfont': '"Trebuchet MS", Helvetica, sans-serif',
 }
 html_logo = "mlogo.png"
 
