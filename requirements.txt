@@ -1,4 +1,6 @@
 Babel==2.4.0
+CommonMark==0.5.4
+coverage==4.3.4
 Flask==0.12
 Flask-HTTPAuth==3.2.2
 Flask-PyMongo==0.4.1
