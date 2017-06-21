@@ -83,7 +83,7 @@ def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
          "model_start": "%s%s_s" % (model_prefix, j),
          "model_end": "%s%s_e" % (model_prefix, j), "rank": rank,
          "train_data": ["D%s%s" % (i, j) for i in range(n_train)],
-         "test_data": ["DT%s%s" % (i, j) for i in range(n_test)],
+         "test_data": ["DT%s" % (i) for i in range(n_test)],
          "uuid": "%s%s" % (uuid_prefix, j), "timestamp_done": timestamp_done,
          "timestamp_creation": timestamp_creation}
         for j in range(n_learnuplet)]
@@ -145,7 +145,7 @@ class APITestCase(unittest.TestCase):
         # add associated problem first
         rv = self.app.post('/problem',
                            data=json.dumps({"uuid": "P2", "workflow": "W2",
-                                            "test_dataset": ["TD1", "TD2"],
+                                            "test_dataset": ["DT1", "DT2"],
                                             "size_train_dataset": 4}),
                            content_type='application/json',
                            headers=headers)
@@ -155,7 +155,8 @@ class APITestCase(unittest.TestCase):
         nb_data = 10
         rv = self.app.post('/data',
                            data=json.dumps({"uuid": ["D%s" % i
-                                                     for i in range(nb_data)],
+                                                     for i in range(nb_data)] +
+                                            ["DT1", "DT2"],
                                             "problems": ["P2"]}),
                            content_type='application/json',
                            headers=headers)
@@ -165,6 +166,12 @@ class APITestCase(unittest.TestCase):
         # try to add algo associated with non-existing problem
         rv = self.app.post('/algo',
                            data=json.dumps({"uuid": "A", "problem": "EMPTY"}),
+                           content_type='application/json',
+                           headers=headers)
+        self.assertEqual(rv.status_code, 400)
+        # try to add algo with wrong key
+        rv = self.app.post('/algo',
+                           data=json.dumps({"uuid": "A", "problemo": "P2"}),
                            content_type='application/json',
                            headers=headers)
         self.assertEqual(rv.status_code, 400)
@@ -188,13 +195,16 @@ class APITestCase(unittest.TestCase):
         n_data_new = 10
         # add associated problem first
         self.db.problem.insert_one({"uuid": "P3", "workflow": "W3",
-                                    "test_dataset": ["TD1", "TD2"],
+                                    "test_dataset": ["DT1", "DT2"],
                                     "size_train_dataset": n_data_new // 2})
         # add "preexisting" data
         # TODO do we need it?? Make it similar to generate_list_learnuplets
         self.db.data.insert_many([{"uuid": "DD%s" % i, "problems": "P3",
                                    "timestamp_upload": int(time.time())}
                                   for i in range(n_data)])
+        self.db.data.insert_many([{"uuid": "DT%s" % i, "problems": "P3",
+                                   "timestamp_upload": int(time.time())}
+                                  for i in range(1, 3)])
         # add algo
         self.db.algo.insert_many([{"uuid": "A3_0", "problem": "P3",
                                    "timestamp_upload": int(time.time())}])
@@ -208,6 +218,14 @@ class APITestCase(unittest.TestCase):
                            data=json.dumps({"uuid": ["D3%s" % i for i
                                                      in range(n_data_new)],
                                             "problems": ["EMPTY"]}),
+                           content_type='application/json',
+                           headers=headers)
+        self.assertEqual(rv.status_code, 400)
+        # try to add data with wrong key
+        rv = self.app.post('/data',
+                           data=json.dumps({"uuid": ["D3%s" % i for i
+                                                     in range(n_data_new)],
+                                            "problemos": ["P3"]}),
                            content_type='application/json',
                            headers=headers)
         self.assertEqual(rv.status_code, 400)
