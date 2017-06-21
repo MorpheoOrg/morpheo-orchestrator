@@ -150,9 +150,11 @@ def algo_learnuplet(algo_uuid):
     if problem:
         active_data = api.mongo.db.data.find({"problems": problem["uuid"]}). \
             distinct("uuid")
+        test_data = problem["test_dataset"]
+        # Filter out test data...
+        active_data = list(set(active_data) - set(test_data))
         # Create learnuplet for each fold if enough data exist
         sz_batch = problem["size_train_dataset"]
-        test_data = problem["test_dataset"]
         problem_uuid = problem["uuid"]
         workflow_uuid = problem["workflow"]
         new_learnuplets = create_learnuplet(active_data, sz_batch, test_data,
