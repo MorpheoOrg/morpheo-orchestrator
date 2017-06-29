@@ -152,6 +152,7 @@ def add_algo():
 
     **Data to post**:
         - *uuid* : algo UUID
+        - *name* : algo name
         - *problem* : UUID of associated problem
 
     **Success Response content**:
