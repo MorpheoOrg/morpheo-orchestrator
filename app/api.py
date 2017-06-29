@@ -64,7 +64,8 @@ app.config['MONGO_HOST'] = mongo_host
 mongo = PyMongo(app)
 
 auth = HTTPBasicAuth()
-users = {os.environ.get('USER_AUTH'):os.environ.get('PWD_AUTH')}
+users = {os.environ.get('USER_AUTH'): os.environ.get('PWD_AUTH')}
+
 
 @auth.get_password
 def get_pw(username):
@@ -80,13 +81,14 @@ compute_url = os.environ.get('COMPUTE_URL')
 # problems
 post_document = {
     'problem': ['uuid', 'workflow', 'test_dataset', 'size_train_dataset'],
-    'algo': ['uuid', 'problem'],
+    'algo': ['uuid', 'problem', 'name'],
     'data': ['uuid', 'problems'],
 }
 # Existing collections
 list_collection = list(post_document.keys()) + ['learnuplet', 'preduplet']
 # Requirements for other post requests
 post_request = {'prediction': ['data', 'problem']}
+
 
 @app.route('/<collection_name>', methods=['GET'])
 @auth.login_required
@@ -337,7 +339,8 @@ def report_perf_learnuplet(learnuplet_uuid):
                     {'uuid': learnuplet_uuid})
                 # find learnuplet with best performance
                 best_learnuplet = mongo.db.learnuplet.find_one(
-                    {"perf": {"$exists": True}, "algo": learnuplet_perf['algo']},
+                    {"perf": {"$exists": True},
+                     "algo": learnuplet_perf['algo']},
                     sort=[("perf", -1)])
                 # change model start in next learnuplet
                 next_model_start = best_learnuplet['model_end']
