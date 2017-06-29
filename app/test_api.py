@@ -165,19 +165,22 @@ class APITestCase(unittest.TestCase):
             json.loads(rv.get_data(as_text=True))["new_learnuplets"], 0)
         # try to add algo associated with non-existing problem
         rv = self.app.post('/algo',
-                           data=json.dumps({"uuid": "A", "problem": "EMPTY"}),
+                           data=json.dumps({"uuid": "A", "problem": "EMPTY",
+                                            "name": "Empty"}),
                            content_type='application/json',
                            headers=headers)
         self.assertEqual(rv.status_code, 400)
         # try to add algo with wrong key
         rv = self.app.post('/algo',
-                           data=json.dumps({"uuid": "A", "problemo": "P2"}),
+                           data=json.dumps({"uuid": "A", "problemo": "P2",
+                                            "name": "algorator"}),
                            content_type='application/json',
                            headers=headers)
         self.assertEqual(rv.status_code, 400)
         # add algo
         rv = self.app.post('/algo',
-                           data=json.dumps({"uuid": "A", "problem": "P2"}),
+                           data=json.dumps({"uuid": "A", "problem": "P2",
+                                            "name": "torsten"}),
                            content_type='application/json',
                            headers=headers)
         self.assertEqual(rv.status_code, 201)
@@ -207,6 +210,7 @@ class APITestCase(unittest.TestCase):
                                   for i in range(1, 3)])
         # add algo
         self.db.algo.insert_many([{"uuid": "A3_0", "problem": "P3",
+                                   "name": "slata",
                                    "timestamp_upload": int(time.time())}])
         # add learnuplet which are already trained
         learnuplet_done = generate_list_learnuplets(

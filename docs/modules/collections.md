@@ -69,6 +69,7 @@ An `algo` represents a untrained machine learning model for a given `problem` su
 An `algo` has the following fields:
 - `uuid`: a unique identifier of the algo. *db.UUIDField()*. 
 - `problem`: UUID of the associated problem. *db.UUIDField()*.  
+- `algo`: name of the algo. *db.StringField()*.  
 - `timestamp_upload`: timestamp of registration on `Orchestrator`.  *db.DateTimeField()*.  
 
 For details about how to register an `algo`, see the [endpoints documentation](./endpoints.html).

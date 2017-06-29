@@ -36,7 +36,6 @@
 '''
 
 import time
-import random
 import numpy as np
 import uuid
 import requests
@@ -72,11 +71,8 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
     if start_rank == 0 and model_uuid_start != algo_uuid:
         return []
     list_new_learnuplets = []
-    # permuation of all active data and scattering into batchs
-    n_data = len(new_data)
-    perm_list = random.sample(range(n_data), n_data)
-    batchs_uuid = [list(np.array(new_data)[perm_list[i: i + int(sz_batch)]])
-                   for i in range(0, n_data, int(sz_batch))]
+    batchs_uuid = [list(np.array(new_data)[i: i + int(sz_batch)])
+                   for i in range(0, len(new_data), int(sz_batch))]
     # for each batch of data create a learnuplet
     for i, train_data in enumerate(batchs_uuid):
         j = i + start_rank
@@ -149,7 +145,7 @@ def algo_learnuplet(algo_uuid):
     new_learnuplets = []
     if problem:
         active_data = api.mongo.db.data.find({"problems": problem["uuid"]}). \
-            distinct("uuid")
+            sort("timestamp_upload").distinct("uuid")
         test_data = problem["test_dataset"]
         # Filter out test data...
         active_data = list(set(active_data) - set(test_data))
