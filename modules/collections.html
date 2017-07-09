@@ -140,7 +140,7 @@ For phase 1.2, a <code class="docutils literal"><span class="pre">Poster</span><
 <p>A <code class="docutils literal"><span class="pre">data</span></code> is submitted via the <code class="docutils literal"><span class="pre">Viewer</span></code>, stored in <code class="docutils literal"><span class="pre">Storage</span></code>, and registered in the <code class="docutils literal"><span class="pre">Orchestrator</span></code> database. It has the following fields:</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">uuid</span></code>: a unique identifier of the data. <em>db.UUIDField()</em>.</li>
-<li><code class="docutils literal"><span class="pre">problem</span></code>: list of UUIDs of associated problems (a data can be associated with several problems). <em>db.ListField(db.UUIDField())</em>.</li>
+<li><code class="docutils literal"><span class="pre">problems</span></code>: list of UUIDs of associated problems (a data can be associated with several problems). <em>db.ListField(db.UUIDField())</em>.</li>
 <li><code class="docutils literal"><span class="pre">timestamp_upload</span></code>: timestamp of registration on <code class="docutils literal"><span class="pre">Orchestrator</span></code>.  <em>db.DateTimeField()</em>.</li>
 </ul>
 <p><strong>Note</strong>: For now, there is no field to indicate who submitted the algo, since it is out of scope for phase 1.1.

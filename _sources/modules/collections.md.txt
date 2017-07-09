@@ -81,7 +81,7 @@ For phase 1.2, a `Poster` collection might be introduced (with an `uuid` and a `
 
 A `data` is submitted via the `Viewer`, stored in `Storage`, and registered in the `Orchestrator` database. It has the following fields: 
 - `uuid`: a unique identifier of the data. *db.UUIDField()*. 
-- `problem`: list of UUIDs of associated problems (a data can be associated with several problems). *db.ListField(db.UUIDField())*.  
+- `problems`: list of UUIDs of associated problems (a data can be associated with several problems). *db.ListField(db.UUIDField())*.  
 - `timestamp_upload`: timestamp of registration on `Orchestrator`.  *db.DateTimeField()*.  
 
 **Note**: For now, there is no field to indicate who submitted the algo, since it is out of scope for phase 1.1.
