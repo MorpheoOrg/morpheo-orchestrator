@@ -208,6 +208,24 @@ Only exposed to the Compute.</p>
 </dd></dl>
 
 <dl class="get">
+<dt id="get--(collection_name)-(document_uuid)">
+<code class="descname">GET </code><code class="descname">/</code><span class="sig-paren">(</span><em>collection_name</em><span class="sig-paren">)</span><code class="descname">/</code><span class="sig-paren">(</span><em>document_uuid</em><span class="sig-paren">)</span><a class="headerlink" href="#get--(collection_name)-(document_uuid)" title="Permalink to this definition">¶</a></dt>
+<dd><ul class="simple">
+<li>(<em>collection_name</em>) : <strong>problem</strong>, <strong>algo</strong>, <strong>data</strong>, <strong>learnuplet</strong>,</li>
+</ul>
+<p>or <strong>preduplet</strong>
+- (<em>document_uuid</em>) :UUID of the requested document</p>
+<p>Get a document of a collection</p>
+<dl class="docutils">
+<dt><strong>Success Response content</strong>:</dt>
+<dd><ul class="first last simple">
+<li><em>problem/algo/data/learnuplet/preduplet</em>: document elements</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="get">
 <dt id="get--(collection_name)">
 <code class="descname">GET </code><code class="descname">/</code><span class="sig-paren">(</span><em>collection_name</em><span class="sig-paren">)</span><a class="headerlink" href="#get--(collection_name)" title="Permalink to this definition">¶</a></dt>
 <dd><ul class="simple">
