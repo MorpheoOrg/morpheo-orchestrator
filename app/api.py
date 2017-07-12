@@ -124,13 +124,13 @@ def get_document(collection_name, document_uuid):
     Get a document of a collection
 
     **Success Response content**:
-        - *problem/algo/data/learnuplet/preduplet*: document elements
+        - document elements
     """
     if collection_name in list_collection:
         collection = mongo.db[collection_name]
         d = collection.find_one({"uuid": document_uuid})
         output = {k: v for k, v in d.items() if k != '_id'}
-        return jsonify({collection_name: output}), 200
+        return jsonify(output), 200
     else:
         return jsonify({'Error': 'Page does not exist'}), 404
 
