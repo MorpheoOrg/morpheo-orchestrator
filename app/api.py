@@ -80,7 +80,8 @@ compute_url = os.environ.get('COMPUTE_URL')
 # data: uuid can be one element or a list, in this case all element have same
 # problems
 post_document = {
-    'problem': ['uuid', 'workflow', 'test_dataset', 'size_train_dataset'],
+    'problem': ['uuid', 'storage_problem_uuid', 'test_dataset',
+                'size_train_dataset'],
     'algo': ['uuid', 'problem', 'name'],
     'data': ['uuid', 'problems'],
 }
@@ -121,7 +122,7 @@ def add_problem():
 
     **Data to post**:
         - *uuid* : problem UUID
-        - *workflow* : workflow UUID
+        - *storage_problem_uuid* : problem UUID on Storage
         - *test_dataset* : list of test data UUID
         - *size_train_dataset* : nb of train data per minibatch (integer)
 

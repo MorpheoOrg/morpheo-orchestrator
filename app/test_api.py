@@ -60,8 +60,8 @@ print(headers)
 
 
 def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
-                              workflow="PW", status="todo", perf=None,
-                              worker=None, algo_prefix="MD_",
+                              storage_problem_uuid="PW", status="todo",
+                              perf=None, worker=None, algo_prefix="MD_",
                               model_prefix="MD_", uuid_prefix="id_", rank=0,
                               timestamp_creation=None, timestamp_done=None):
     if type(perf) is not list:
@@ -77,7 +77,8 @@ def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
         train_perf = None
         test_perf = None
     list_learnuplets = [
-        {"problem": problem, "workflow": workflow, "worker": worker,
+        {"problem": problem, "storage_problem_uuid": storage_problem_uuid,
+         "worker": worker,
          "perf": perf[j], "train_perf": train_perf, "test_perf": test_perf,
          "status": status, "algo": "%s%s_s" % (algo_prefix, j),
          "model_start": "%s%s_s" % (model_prefix, j),
@@ -90,9 +91,9 @@ def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
     return list_learnuplets
 
 
-def generate_list_preduplets(n_preduplet, n_data=4, problem="PB", workflow="PW",
-                             model="MD", worker=None, status="todo",
-                             uuid_prefix="id_",
+def generate_list_preduplets(n_preduplet, n_data=4, problem="PB",
+                             storage_problem_uuid="PW", model="MD",
+                             worker=None, status="todo", uuid_prefix="id_",
                              timestamp_request=None, timestamp_done=None):
     if not timestamp_request:
         timestamp_request = int(time.time())
@@ -100,7 +101,8 @@ def generate_list_preduplets(n_preduplet, n_data=4, problem="PB", workflow="PW",
         {"problem": problem, "worker": worker, "status": status, "model": model,
          "data": ["T%s%s" % (i, j) for i in range(n_data)],
          "timestamp_request": timestamp_request,
-         "timestamp_done": timestamp_done, "workflow": workflow,
+         "timestamp_done": timestamp_done,
+         "storage_problem_uuid": storage_problem_uuid,
          "uuid": "%s%s" % (uuid_prefix, j)}
         for j in range(n_preduplet)]
     return list_preduplets
@@ -128,7 +130,8 @@ class APITestCase(unittest.TestCase):
     def test_create_problem(self):
         # existing field
         rv = self.app.post('/problem',
-                           data=json.dumps({"uuid": "P1", "workflow": "W1",
+                           data=json.dumps({"uuid": "P1",
+                                            "storage_problem_uuid": "W1",
                                             "test_dataset": ["TD1", "TD2"],
                                             "size_train_dataset": 4}),
                            content_type='application/json',
@@ -144,7 +147,8 @@ class APITestCase(unittest.TestCase):
     def test_create_algo(self):
         # add associated problem first
         rv = self.app.post('/problem',
-                           data=json.dumps({"uuid": "P2", "workflow": "W2",
+                           data=json.dumps({"uuid": "P2",
+                                            "storage_problem_uuid": "W2",
                                             "test_dataset": ["DT1", "DT2"],
                                             "size_train_dataset": 4}),
                            content_type='application/json',
@@ -197,7 +201,7 @@ class APITestCase(unittest.TestCase):
         n_data = 10
         n_data_new = 10
         # add associated problem first
-        self.db.problem.insert_one({"uuid": "P3", "workflow": "W3",
+        self.db.problem.insert_one({"uuid": "P3", "storage_problem_uuid": "W3",
                                     "test_dataset": ["DT1", "DT2"],
                                     "size_train_dataset": n_data_new // 2})
         # add "preexisting" data
@@ -214,7 +218,8 @@ class APITestCase(unittest.TestCase):
                                    "timestamp_upload": int(time.time())}])
         # add learnuplet which are already trained
         learnuplet_done = generate_list_learnuplets(
-            1, n_train=n_data, n_test=1, problem="P3", workflow="W3",
+            1, n_train=n_data, n_test=1, problem="P3",
+            storage_problem_uuid="W3",
             model_prefix="A3", worker="WW", perf=0.99, status="done")
         self.db.learnuplet.insert_many(learnuplet_done)
         # try to add data associated with non-existing problem
@@ -254,12 +259,12 @@ class APITestCase(unittest.TestCase):
 
     def test_request_prediction(self):
         # add problem
-        self.db.problem.insert_one({"uuid": "PP", "workflow": "WW",
+        self.db.problem.insert_one({"uuid": "PP", "storage_problem_uuid": "WW",
                                     "test_dataset": ["TD1"],
                                     "size_train_dataset": 2})
         # add learnuplet
         learnuplets = generate_list_learnuplets(
-            2, n_train=5, n_test=1, problem="PP", workflow="WW",
+            2, n_train=5, n_test=1, problem="PP", storage_problem_uuid="WW",
             worker="  ", status="done", perf=[0.96, 0.98])
         self.db.learnuplet.insert_many(learnuplets)
         # request possible prediction and check preduplet has been created
