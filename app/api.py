@@ -113,6 +113,28 @@ def get_all_documents(collection_name):
         return jsonify({'Error': 'Page does not exist'}), 404
 
 
+@app.route('/<collection_name>/<document_uuid>', methods=['GET'])
+@auth.login_required
+def get_document(collection_name, document_uuid):
+    """
+    - (*collection_name*) : **problem**, **algo**, **data**, **learnuplet**,
+    or **preduplet**
+    - (*document_uuid*) :UUID of the requested document
+
+    Get a document of a collection
+
+    **Success Response content**:
+        - *problem/algo/data/learnuplet/preduplet*: document elements
+    """
+    if collection_name in list_collection:
+        collection = mongo.db[collection_name]
+        d = collection.find_one({"uuid": document_uuid})
+        output = {k: v for k, v in d.items() if k != '_id'}
+        return jsonify({collection_name: output}), 200
+    else:
+        return jsonify({'Error': 'Page does not exist'}), 404
+
+
 @app.route('/problem', methods=['POST'])
 @auth.login_required
 def add_problem():

@@ -141,6 +141,10 @@ class APITestCase(unittest.TestCase):
                            headers=headers)
         self.assertEqual(rv.status_code, 400)
 
+        # possible to get the created problem
+        rv = self.app.get('/problem/P1', headers=headers)
+        self.assertEqual(rv.status_code, 200)
+
     def test_create_algo(self):
         # add associated problem first
         rv = self.app.post('/problem',
@@ -184,6 +188,9 @@ class APITestCase(unittest.TestCase):
                            content_type='application/json',
                            headers=headers)
         self.assertEqual(rv.status_code, 201)
+        # check it is possible to get the created algo
+        rv = self.app.get('/algo/A', headers=headers)
+        self.assertEqual(rv.status_code, 200)
         # check learnuplet were created
         self.assertEqual(self.db.learnuplet.find({"algo": "A"}).count(), 3)
         learnuplet_0 = self.db.learnuplet.find_one({"model_start": "A",
@@ -251,6 +258,9 @@ class APITestCase(unittest.TestCase):
             self.db.learnuplet.find({"problem": "P3",
                                      "status": "todo",
                                      "model_start": ''}).count(), 1)
+        # check it is possible to get the created data
+        rv = self.app.get('/data/D30', headers=headers)
+        self.assertEqual(rv.status_code, 200)
 
     def test_request_prediction(self):
         # add problem
