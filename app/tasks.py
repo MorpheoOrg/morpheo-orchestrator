@@ -44,7 +44,8 @@ import api
 
 
 def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
-                      workflow_uuid, algo_uuid, model_uuid_start, start_rank):
+                      storage_problem_uuid, algo_uuid, model_uuid_start,
+                      start_rank):
     """
     Function used to create learnuplets and push them to Compute
 
@@ -52,7 +53,7 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
     :param sz_batch: mini-batch size
     :param test_data: list of test data UUIDs
     :param problem_uuid: UUID of the problem
-    :param workflow_uuid: UUID of the workflow
+    :param storage_problem_uuid: UUID of the problem on Storage
     :param algo_uuid: UUID of the submitted algorithm (before any training)
     :param model_uuid_start: UUID of model from which to start the training\
         (equals algo_uuid if start_rank=0)
@@ -62,7 +63,7 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
     :type sz_batch: integer
     :type test_data: list of UUIDs
     :type problem_uuid: UUID
-    :type workflow_uuid: UUID
+    :type storage_problem_uuid: UUID
     :type algo_uuid: UUID
     :type model_uuid_start: UUID
     :type start_rank: integer
@@ -85,7 +86,7 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
             model_start = ''
         new_learnuplet = {"uuid": str(uuid.uuid4()),
                           "problem": problem_uuid,
-                          "workflow": workflow_uuid,
+                          "storage_problem_uuid": storage_problem_uuid,
                           "algo": algo_uuid,
                           "model_start": model_start,
                           "model_end": model_uuid_end,
@@ -152,9 +153,9 @@ def algo_learnuplet(algo_uuid):
         # Create learnuplet for each fold if enough data exist
         sz_batch = problem["size_train_dataset"]
         problem_uuid = problem["uuid"]
-        workflow_uuid = problem["workflow"]
+        storage_problem_uuid = problem["storage_problem_uuid"]
         new_learnuplets = create_learnuplet(active_data, sz_batch, test_data,
-                                            problem_uuid, workflow_uuid,
+                                            problem_uuid, storage_problem_uuid,
                                             algo_uuid, algo_uuid, 0)
         api.mongo.db.learnuplet.insert_many(new_learnuplets)
     return len(new_learnuplets)
@@ -181,7 +182,7 @@ def data_learnuplet(problem_uuid, data_uuids):
     if list_uuid_algo:
         sz_batch = problem["size_train_dataset"]
         test_data = problem["test_dataset"]
-        workflow_uuid = problem["workflow"]
+        storage_problem_uuid = problem["storage_problem_uuid"]
         for uuid_algo in list_uuid_algo:
             last_learnuplet = api.mongo.db.learnuplet.find_one(
                 {"rank": {"$exists": True}, "algo": uuid_algo},
@@ -191,7 +192,7 @@ def data_learnuplet(problem_uuid, data_uuids):
             last_model = last_learnuplet["model_end"]
             new_learnuplets = create_learnuplet(data_uuids, sz_batch,
                                                 test_data, problem_uuid,
-                                                workflow_uuid, uuid_algo,
+                                                storage_problem_uuid, uuid_algo,
                                                 last_model, last_rank + 1)
             api.mongo.db.learnuplet.insert_many(new_learnuplets)
             n += len(new_learnuplets)
@@ -219,7 +220,7 @@ def create_preduplet(new_preduplet):
         new_preduplet["status"] = "todo"
         new_preduplet["worker"] = None
         new_preduplet["timestamp_done"] = None
-        new_preduplet["workflow"] = problem["workflow"]
+        new_preduplet["storage_problem_uuid"] = problem["storage_problem_uuid"]
         api.mongo.db.preduplet.insert_one(new_preduplet)
         # Push the new learnuplet to Compute
         worker_url = api.compute_url
