@@ -101,11 +101,10 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
                           'timestamp_done': None}
         list_new_learnuplets.append(new_learnuplet)
         model_uuid_start = model_uuid_end
-        # Push the new learnuplet to Compute, which has a model_start
-        worker_url = api.compute_url
-        if worker_url and j == start_rank:
-            post_uplet([new_learnuplet], worker_url, 'learn')
-    return list_new_learnuplets
+        # Remind learnuplet to be be sent to Compute (which has a model_start)
+        if j == start_rank:
+            uplet_to_be_posted = new_learnuplet
+    return list_new_learnuplets, uplet_to_be_posted
 
 
 def post_uplet(list_uplet, worker_url, uplet_prefix):
@@ -153,10 +152,13 @@ def algo_learnuplet(algo_uuid):
         sz_batch = problem["size_train_dataset"]
         problem_uuid = problem["uuid"]
         workflow_uuid = problem["workflow"]
-        new_learnuplets = create_learnuplet(active_data, sz_batch, test_data,
-                                            problem_uuid, workflow_uuid,
-                                            algo_uuid, algo_uuid, 0)
+        new_learnuplets, to_be_posted = create_learnuplet(
+            active_data, sz_batch, test_data, problem_uuid, workflow_uuid,
+            algo_uuid, algo_uuid, 0)
         api.mongo.db.learnuplet.insert_many(new_learnuplets)
+        worker_url = api.compute_url
+        if worker_url and to_be_posted:
+            post_uplet([to_be_posted], worker_url, 'learn')
     return len(new_learnuplets)
 
 
@@ -189,12 +191,14 @@ def data_learnuplet(problem_uuid, data_uuids):
             last_rank = last_learnuplet["rank"]
             # TODO modify. Problem: what if pending models????
             last_model = last_learnuplet["model_end"]
-            new_learnuplets = create_learnuplet(data_uuids, sz_batch,
-                                                test_data, problem_uuid,
-                                                workflow_uuid, uuid_algo,
-                                                last_model, last_rank + 1)
+            new_learnuplets, to_be_posted = create_learnuplet(
+                data_uuids, sz_batch, test_data, problem_uuid,
+                workflow_uuid, uuid_algo, last_model, last_rank + 1)
             api.mongo.db.learnuplet.insert_many(new_learnuplets)
             n += len(new_learnuplets)
+            worker_url = api.compute_url
+            if worker_url and to_be_posted:
+                post_uplet([to_be_posted], worker_url, 'learn')
     return n
 
 
