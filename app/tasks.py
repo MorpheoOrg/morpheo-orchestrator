@@ -121,12 +121,12 @@ def post_uplet(list_uplet, worker_url, uplet_prefix):
     :type uplet_prefix: string
     """
     for uplet in list_uplet:
-        print(uplet)
-        for k, v in uplet.items():
+        clean_uplet = {k: v for k, v in uplet.items() if k != '_id'}
+        for k, v in clean_uplet.items():
             if type(v) == uuid.UUID:
-                uplet[k] = str(v)
+                clean_uplet[k] = str(v)
         requests.post('%s/%s' % (worker_url, uplet_prefix),
-                      data=json.dumps(uplet))
+                      data=json.dumps(clean_uplet))
 
 
 def algo_learnuplet(algo_uuid):
