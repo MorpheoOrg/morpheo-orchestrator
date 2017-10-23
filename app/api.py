@@ -399,6 +399,7 @@ def update_preduplet(preduplet_uuid):
 
     **Data to post**:
         - *status* : status of the prediction task: *done* or *failed*
+        - *prediction_storage_uuid* : UUID of the prediction stored on Storage
 
     **Success Response content**:
         - *updated_preduplet*: uuid of updated preduplet
@@ -407,8 +408,10 @@ def update_preduplet(preduplet_uuid):
         request_data = request.get_json()
         updated = mongo.db.preduplet.update_one(
             {'uuid': preduplet_uuid},
-            {'$set': {'status': request_data['status'],
-                      'timestamp_done': int(time.time())}})
+            {'$set': {
+                'status': request_data['status'],
+                'timestamp_done': int(time.time()),
+                'prediction_storage_uuid': request_data['prediction_storage_uuid']}})
         if updated.modified_count == 1:
             return jsonify({'updated_preduplet': preduplet_uuid}), 200
         else:
