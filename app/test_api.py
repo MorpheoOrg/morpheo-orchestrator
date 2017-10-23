@@ -93,7 +93,8 @@ def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
 def generate_list_preduplets(n_preduplet, n_data=4, problem="PB", workflow="PW",
                              model="MD", worker=None, status="todo",
                              uuid_prefix="id_",
-                             timestamp_request=None, timestamp_done=None):
+                             timestamp_request=None, timestamp_done=None,
+                             prediction_storage_uuid=None):
     if not timestamp_request:
         timestamp_request = int(time.time())
     list_preduplets = [
@@ -101,6 +102,7 @@ def generate_list_preduplets(n_preduplet, n_data=4, problem="PB", workflow="PW",
          "data": ["T%s%s" % (i, j) for i in range(n_data)],
          "timestamp_request": timestamp_request,
          "timestamp_done": timestamp_done, "workflow": workflow,
+         "prediction_storage_uuid": prediction_storage_uuid,
          "uuid": "%s%s" % (uuid_prefix, j)}
         for j in range(n_preduplet)]
     return list_preduplets
@@ -417,7 +419,8 @@ class APITestCase(unittest.TestCase):
         self.db.preduplet.insert_one(preduplet)
         # should be ok
         rv = self.app.post('/preddone/id_0',
-                           data=json.dumps({"status": "done"}),
+                           data=json.dumps({"status": "done",
+                                            "prediction_storage_uuid": "id"}),
                            content_type='application/json',
                            headers=headers)
         self.assertEqual(rv.status_code, 200)
@@ -425,13 +428,21 @@ class APITestCase(unittest.TestCase):
                                                  "status": "done"}).count(), 1)
         # wrong learnuplet uuid
         rv = self.app.post('/preddone/ad_0',
+                           data=json.dumps({"status": "done",
+                                            "prediction_storage_uuid": "id"}),
+                           content_type='application/json',
+                           headers=headers)
+        self.assertEqual(rv.status_code, 400)
+        # Missing key in request
+        rv = self.app.post('/preddone/id_0',
                            data=json.dumps({"status": "done"}),
                            content_type='application/json',
                            headers=headers)
         self.assertEqual(rv.status_code, 400)
         # wrong key in request
         rv = self.app.post('/preddone/id_0',
-                           data=json.dumps({"sttys": "oups"}),
+                           data=json.dumps({"sttys": "oups",
+                                            "prediction_storage_uuid": "id"}),
                            content_type='application/json',
                            headers=headers)
         self.assertEqual(rv.status_code, 400)
