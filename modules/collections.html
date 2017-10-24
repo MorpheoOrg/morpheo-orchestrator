@@ -152,11 +152,12 @@ For phase 1.2, a <code class="docutils literal"><span class="pre">Poster</span><
 <p>A <code class="docutils literal"><span class="pre">preduplet</span></code> is created in the <code class="docutils literal"><span class="pre">Orchestrator</span></code> when a prediction is requested. It has the following fields:</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">uuid</span></code>: . <em>db.UUIDField()</em></li>
-<li><code class="docutils literal"><span class="pre">problem</span></code>: . <em>db.UUIDField(max_length=50)</em>.</li>
-<li><code class="docutils literal"><span class="pre">workflow</span></code>: . <em>db.UUIDField(max_length=50)</em>.</li>
-<li><code class="docutils literal"><span class="pre">data</span></code>:  . <em>db.ListField(db.UUIDField())</em>.</li>
-<li><code class="docutils literal"><span class="pre">model</span></code>: . <em>db.UUIDField()</em>.</li>
-<li><code class="docutils literal"><span class="pre">worker</span></code>:  <em>db.UUIDField()</em>.</li>
+<li><code class="docutils literal"><span class="pre">problem</span></code>: UUID of the associated problem <em>db.UUIDField(max_length=50)</em>.</li>
+<li><code class="docutils literal"><span class="pre">workflow</span></code>: UUID on Storage of the workflow associated with the problem <em>db.UUIDField(max_length=50)</em>.</li>
+<li><code class="docutils literal"><span class="pre">data</span></code>:  UUID on Storage of the data from which to compute the prediction <em>db.ListField(db.UUIDField())</em>.</li>
+<li><code class="docutils literal"><span class="pre">prediction_storage_uuid</span></code>:  UUID of the associated prediction file on Storage <em>db.ListField(db.UUIDField())</em>.</li>
+<li><code class="docutils literal"><span class="pre">model</span></code>: UUID on Storage of the model used to compute the prediction <em>db.UUIDField()</em>.</li>
+<li><code class="docutils literal"><span class="pre">worker</span></code>: UUID of the worker on which computation are made <em>db.UUIDField()</em>.</li>
 <li><code class="docutils literal"><span class="pre">status</span></code>:  <em>db.StringField(max_length=8)</em>.</li>
 <li><code class="docutils literal"><span class="pre">timestamp_request</span></code>: <em>db.DateTimeField()</em>.</li>
 <li><code class="docutils literal"><span class="pre">timestamp_done</span></code>: <em>db.DateTimeField()</em>.</li>
