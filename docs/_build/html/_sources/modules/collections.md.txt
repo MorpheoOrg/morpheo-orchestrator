@@ -93,11 +93,12 @@ For details about how to register a `data`, see the [endpoints documentation](./
 
 A `preduplet` is created in the `Orchestrator` when a prediction is requested. It has the following fields:
 - `uuid`: . *db.UUIDField()*  
-- `problem`: . *db.UUIDField(max_length=50)*.  
-- `workflow`: . *db.UUIDField(max_length=50)*.  
-- `data`:  . *db.ListField(db.UUIDField())*.  
-- `model`: . *db.UUIDField()*.  
-- `worker`:  *db.UUIDField()*.  
+- `problem`: UUID of the associated problem *db.UUIDField(max_length=50)*.  
+- `workflow`: UUID on Storage of the workflow associated with the problem *db.UUIDField(max_length=50)*.  
+- `data`:  UUID on Storage of the data from which to compute the prediction *db.ListField(db.UUIDField())*.  
+- `prediction_storage_uuid`:  UUID of the associated prediction file on Storage *db.ListField(db.UUIDField())*.  
+- `model`: UUID on Storage of the model used to compute the prediction *db.UUIDField()*.  
+- `worker`: UUID of the worker on which computation are made *db.UUIDField()*.  
 - `status`:  *db.StringField(max_length=8)*.  
 - `timestamp_request`: *db.DateTimeField()*.  
 - `timestamp_done`: *db.DateTimeField()*.  
