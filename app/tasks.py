@@ -225,6 +225,7 @@ def create_preduplet(new_preduplet):
         worker_url = api.compute_url
         if worker_url:
             post_uplet([new_preduplet], worker_url, 'pred')
-        return 1
+        clean_uplet = {k: v for k, v in new_preduplet.items() if k != '_id'}
+        return clean_uplet
     else:
         return 0
