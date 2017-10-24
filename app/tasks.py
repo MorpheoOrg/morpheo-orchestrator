@@ -219,8 +219,9 @@ def create_preduplet(new_preduplet):
         new_preduplet["worker"] = None
         new_preduplet["timestamp_done"] = None
         new_preduplet["workflow"] = problem["workflow"]
+        new_preduplet["prediction_storage_uuid"] = None
         api.mongo.db.preduplet.insert_one(new_preduplet)
-        # Push the new learnuplet to Compute
+        # Push the new preduplet to Compute
         worker_url = api.compute_url
         if worker_url:
             post_uplet([new_preduplet], worker_url, 'pred')
