@@ -90,7 +90,7 @@ def generate_list_learnuplets(n_learnuplet, n_train=5, n_test=5, problem="PB",
     return list_learnuplets
 
 
-def generate_list_preduplets(n_preduplet, n_data=4, problem="PB", workflow="PW",
+def generate_list_preduplets(n_preduplet, problem="PB", workflow="PW",
                              model="MD", worker=None, status="todo",
                              uuid_prefix="id_",
                              timestamp_request=None, timestamp_done=None,
@@ -98,8 +98,9 @@ def generate_list_preduplets(n_preduplet, n_data=4, problem="PB", workflow="PW",
     if not timestamp_request:
         timestamp_request = int(time.time())
     list_preduplets = [
-        {"problem": problem, "worker": worker, "status": status, "model": model,
-         "data": ["T%s%s" % (i, j) for i in range(n_data)],
+        {"problem": problem, "worker": worker, "status": status,
+         "model": model,
+         "data": "T%s" % j,
          "timestamp_request": timestamp_request,
          "timestamp_done": timestamp_done, "workflow": workflow,
          "prediction_storage_uuid": prediction_storage_uuid,
@@ -276,8 +277,7 @@ class APITestCase(unittest.TestCase):
         self.db.learnuplet.insert_many(learnuplets)
         # request possible prediction and check preduplet has been created
         rv = self.app.post('/prediction',
-                           data=json.dumps({"data": ["DP%s" % i
-                                                     for i in range(10)],
+                           data=json.dumps({"data": "DP",
                                             "problem": "PP"}),
                            content_type='application/json',
                            headers=headers)
@@ -292,7 +292,7 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(rv.status_code, 400)
         # non existing model or problem
         rv = self.app.post('/prediction',
-                           data=json.dumps({"data": ["DPB1"],
+                           data=json.dumps({"data": "DPB1",
                                             "problem": "IDONTEXIST"}),
                            content_type='application/json',
                            headers=headers)

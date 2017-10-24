@@ -73,6 +73,7 @@ def get_pw(username):
         return users.get(username)
     return None
 
+
 # Compute url to push new task to it (should be removed in phase 1.2)
 compute_url = os.environ.get('COMPUTE_URL')
 
@@ -265,20 +266,24 @@ def request_prediction():
     Request a prediction on data for a given problem.
 
     **Data to post**:
-        - *data* : list of UUID on which to apply the prediction
+        - *data* : UUID on which to apply the prediction
         - *problem* : UUID of the associated problem
 
     **Success Response content**:
-        - *new_preduplets*: number of newly created preduplets
+        - *preduplet*: preduplet created and posted to compute
     """
     try:
         request_data = request.get_json()
+        # Check that fields are valid
+        if not isinstance(request_data['data'], str):
+            return jsonify({'Error': 'data field should be an UUID'}), 400
+        # Create preduplet
         new_preduplet = {k: request_data[k]
                          for k in post_request['prediction']}
         new_preduplet['timestamp_request'] = int(time.time())
-        n_preduplet = tasks.create_preduplet(new_preduplet)
-        if n_preduplet:
-            return jsonify({'new_preduplets': n_preduplet}), 201
+        preduplet_created = tasks.create_preduplet(new_preduplet)
+        if preduplet_created:
+            return jsonify(preduplet_created), 201
         else:
             return jsonify({'Error': 'no problem or trained model'}), 400
     except KeyError:
