@@ -200,7 +200,7 @@ class APITestCase(unittest.TestCase):
                                                     "rank": 0})
         self.assertEqual(learnuplet_0["status"], "todo")
         self.assertEqual(self.db.learnuplet.
-                         find_one({"model_start": '',
+                         find_one({"model_start": None,
                                    "rank": 1})["status"], "todo")
 
     def test_create_data(self):
@@ -255,12 +255,12 @@ class APITestCase(unittest.TestCase):
             json.loads(rv.get_data(as_text=True))["new_learnuplets"], 2)
         self.assertEqual(self.db.learnuplet.find({"problem": "P3"}).count(), 3)
         self.assertEqual(self.db.learnuplet.find(
-            {"problem": "P3", "status": "todo", "model_start": {"$ne": ''}}).
+            {"problem": "P3", "status": "todo", "model_start": {"$ne": None}}).
             count(), 1)
         self.assertEqual(
             self.db.learnuplet.find({"problem": "P3",
                                      "status": "todo",
-                                     "model_start": ''}).count(), 1)
+                                     "model_start": None}).count(), 1)
         # check it is possible to get the created data
         rv = self.app.get('/data/D30', headers=headers)
         self.assertEqual(rv.status_code, 200)

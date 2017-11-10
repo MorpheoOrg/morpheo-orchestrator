@@ -404,20 +404,27 @@ def update_preduplet(preduplet_uuid):
 
     **Data to post**:
         - *status* : status of the prediction task: *done* or *failed*
-        - *prediction_storage_uuid* : UUID of the prediction stored on Storage
+        - If *status = done*, post also:
+          - *prediction_storage_uuid* : UUID of the prediction stored on Storage
 
     **Success Response content**:
         - *updated_preduplet*: uuid of updated preduplet
     """
     try:
         request_data = request.get_json()
-        updated = mongo.db.preduplet.update_one(
+        # update status in current preduplet
+        updated_status = mongo.db.preduplet.update_one(
             {'uuid': preduplet_uuid},
-            {'$set': {
-                'status': request_data['status'],
-                'timestamp_done': int(time.time()),
-                'prediction_storage_uuid': request_data['prediction_storage_uuid']}})
-        if updated.modified_count == 1:
+            {'$set': {'status': request_data["status"]}})
+        # update perf in current preduplet if learning has been done
+        if request_data["status"] == 'done':
+            mongo.db.preduplet.update_one(
+                {'uuid': preduplet_uuid},
+                {'$set': {
+                    'status': request_data['status'],
+                    'timestamp_done': int(time.time()),
+                    'prediction_storage_uuid': request_data['prediction_storage_uuid']}})
+        if updated_status.modified_count == 1:
             return jsonify({'updated_preduplet': preduplet_uuid}), 200
         else:
             return jsonify(

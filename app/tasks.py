@@ -82,7 +82,7 @@ def create_learnuplet(new_data, sz_batch, test_data, problem_uuid,
         if j == start_rank:
             model_start = model_uuid_start
         else:
-            model_start = ''
+            model_start = None
         new_learnuplet = {"uuid": str(uuid.uuid4()),
                           "problem": problem_uuid,
                           "workflow": workflow_uuid,
